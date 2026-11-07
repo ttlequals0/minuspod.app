@@ -83,6 +83,10 @@ export default defineConfig({
   site: 'https://docs.minuspod.app',
   integrations: [
     starlight({
+      components: {
+        ThemeProvider: './src/components/ThemeProvider.astro',
+        ThemeSelect: './src/components/ThemeSelect.astro',
+      },
       title: 'MinusPod',
       logo: {
         light: './src/assets/generated/logo.svg',

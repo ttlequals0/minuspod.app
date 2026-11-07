@@ -27,3 +27,21 @@ describe.skipIf(!built)('landing built html (build landing first)', () => {
     expect(html).toContain('class="logo-dark"');
   });
 });
+
+const docsFile = new URL('../docs/dist/index.html', import.meta.url);
+const docsBuilt = existsSync(docsFile);
+const docsHtml = docsBuilt ? readFileSync(docsFile, 'utf8') : '';
+
+describe.skipIf(!docsBuilt)('docs built html (build docs first)', () => {
+  test('docs header renders the shared picker', () => {
+    expect(docsHtml).toContain('data-theme-pair');
+    expect(docsHtml).toContain('Same themes as the MinusPod app');
+    expect(docsHtml).toMatch(/<option value="nord"[^>]*selected/);
+    expect(docsHtml).toContain('data-theme-mode');
+  });
+
+  test('docs inline Starlight theme provider is replaced', () => {
+    expect(docsHtml).toContain('dataset.pair');
+    expect(docsHtml).not.toContain('starlight-theme');
+  });
+});

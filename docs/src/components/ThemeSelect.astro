@@ -1,0 +1,124 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+import themes from '../../../shared/generated/themes.json';
+import { DEFAULT_PAIR } from '../../../shared/theme/config.mjs';
+import { displayName, modeSuffix, modeTitle } from '../../../shared/theme/names.mjs';
+
+const groups = themes.groups
+  .map((group) => ({ group, items: themes.themes.filter((t) => t.group === group) }))
+  .filter((g) => g.items.length > 0);
+---
+
+<div class="theme-picker">
+  <label class="theme-pair" style="--sl-select-width: 11em">
+    <span class="sr-only">Theme</span>
+    <span class="dot" aria-hidden="true"></span>
+    <select data-theme-pair autocomplete="off">
+      <option disabled>Same themes as the MinusPod app</option>
+      {groups.map(({ group, items }) => (
+        <optgroup label={group}>
+          {items.map((t) => (
+            <option value={t.id} data-accent={t.accentColor} title={modeTitle(t)} selected={t.id === DEFAULT_PAIR}>
+              {displayName(t) + modeSuffix(t)}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
+    <Icon name="down-caret" class="icon caret" />
+  </label>
+  <label class="theme-mode" style="--sl-select-width: 6.25em">
+    <span class="sr-only">Color mode</span>
+    <Icon name="laptop" class="icon label-icon" />
+    <select data-theme-mode autocomplete="off">
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+      <option value="system" selected>System</option>
+    </select>
+    <Icon name="down-caret" class="icon caret" />
+  </label>
+</div>
+
+<script>
+  import { initThemePicker } from '../../../shared/theme/picker.js';
+  initThemePicker(document);
+</script>
+
+<style>
+  @layer starlight.core {
+    .theme-picker {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    label {
+      --sl-label-icon-size: 0.875rem;
+      --sl-caret-size: 1.25rem;
+      --sl-inline-padding: 0.5rem;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      color: var(--sl-color-gray-2);
+    }
+
+    label:hover {
+      color: var(--sl-color-white);
+    }
+
+    .icon,
+    .dot {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .dot {
+      inset-inline-start: 0;
+      width: 0.625rem;
+      height: 0.625rem;
+      border-radius: 50%;
+      background: var(--theme-accent, var(--sl-color-accent));
+    }
+
+    select {
+      border: 0;
+      padding-block: 0.625rem;
+      padding-inline: calc(var(--sl-label-icon-size) + var(--sl-inline-padding) + 0.25rem)
+        calc(var(--sl-caret-size) + var(--sl-inline-padding) + 0.25rem);
+      margin-inline: calc(var(--sl-inline-padding) * -1);
+      width: calc(var(--sl-select-width) + var(--sl-inline-padding) * 2);
+      background-color: transparent;
+      text-overflow: ellipsis;
+      color: inherit;
+      cursor: pointer;
+      appearance: none;
+    }
+
+    option,
+    optgroup {
+      background-color: var(--sl-color-bg-nav);
+      color: var(--sl-color-gray-1);
+    }
+
+    @media (min-width: 50rem) {
+      select {
+        font-size: var(--sl-text-sm);
+      }
+    }
+  }
+
+  @layer starlight.components {
+    .label-icon {
+      font-size: var(--sl-label-icon-size);
+      inset-inline-start: 0;
+    }
+
+    .caret {
+      font-size: var(--sl-caret-size);
+      inset-inline-end: 0;
+    }
+  }
+</style>
