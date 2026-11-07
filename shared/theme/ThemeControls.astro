@@ -2,6 +2,7 @@
 import themes from '../generated/themes.json';
 import { DEFAULT_PAIR } from './config.mjs';
 import { displayName, modeSuffix, modeTitle } from './names.mjs';
+import './controls.css';
 
 const groups = themes.groups
   .map((group) => ({ group, items: themes.themes.filter((t) => t.group === group) }))
