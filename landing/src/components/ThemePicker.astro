@@ -1,23 +1,8 @@
 ---
-import PairOptions from '../../../shared/theme/PairOptions.astro';
+import ThemeControls from '../../../shared/theme/ThemeControls.astro';
 ---
 
-<div class="theme-picker">
-  <label class="theme-pair">
-    <span class="sr-only">Theme</span>
-    <select data-theme-pair autocomplete="off">
-      <PairOptions />
-    </select>
-  </label>
-  <label class="theme-mode">
-    <span class="sr-only">Color mode</span>
-    <select data-theme-mode autocomplete="off">
-      <option value="light">Light</option>
-      <option value="dark">Dark</option>
-      <option value="system" selected>System</option>
-    </select>
-  </label>
-</div>
+<ThemeControls />
 
 <script>
   import { initThemePicker } from '../../../shared/theme/picker.js';

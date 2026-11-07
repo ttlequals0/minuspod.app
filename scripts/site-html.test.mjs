@@ -11,16 +11,15 @@ function page(path) {
 
 const html = page('../landing/dist/index.html');
 const docsHtml = page('../docs/dist/index.html');
-const defaultSelected = new RegExp(`<option value="${DEFAULT_PAIR}"[^>]*selected`);
+const defaultPressed = new RegExp(`data-theme-pair="${DEFAULT_PAIR}" aria-pressed="true"`);
 
 describe.skipIf(!html)('landing built html (build landing first)', () => {
-  test('landing header renders the theme picker with the default pair selected', () => {
-    expect(html).toContain('<select data-theme-pair');
-    expect(html).toContain('<option disabled>Same themes as the MinusPod app</option>');
-    expect(html).toMatch(defaultSelected);
-    expect(html).toContain('<optgroup label="');
-    expect(html).toContain('data-theme-mode');
-    expect(html).toMatch(/<option value="system"[^>]*selected|<option[^>]*selected[^>]*value="system"/);
+  test('landing header renders the theme picker with the default pair pressed', () => {
+    expect(html).toContain('<details class="theme-pair">');
+    expect(html).toContain('Same themes as the MinusPod app');
+    expect(html).toMatch(defaultPressed);
+    expect(html).toContain('class="theme-group-title"');
+    expect(html).toContain('data-theme-mode aria-label="Toggle theme"');
   });
 
   test('bootstrap script is inlined before the stylesheet', () => {
@@ -39,14 +38,13 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
 
 describe.skipIf(!docsHtml)('docs built html (build docs first)', () => {
   test('docs header renders the shared picker', () => {
-    expect(docsHtml).toContain('data-theme-pair');
     expect(docsHtml).toContain('Same themes as the MinusPod app');
-    expect(docsHtml).toMatch(defaultSelected);
-    expect(docsHtml).toContain('data-theme-mode');
+    expect(docsHtml).toMatch(defaultPressed);
+    expect(docsHtml).toContain('data-theme-mode aria-label="Toggle theme"');
   });
 
   test('docs renders the picker in header and mobile menu', () => {
-    expect(docsHtml.match(/<select[^>]*data-theme-pair/g)).toHaveLength(2);
+    expect(docsHtml.match(/<details class="theme-pair">/g)).toHaveLength(2);
   });
 
   test('docs inline Starlight theme provider is replaced', () => {

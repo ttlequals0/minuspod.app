@@ -1,0 +1,44 @@
+---
+import themes from '../generated/themes.json';
+import { DEFAULT_PAIR } from './config.mjs';
+import { displayName, modeSuffix, modeTitle } from './names.mjs';
+
+const groups = themes.groups
+  .map((group) => ({ group, items: themes.themes.filter((t) => t.group === group) }))
+  .filter((g) => g.items.length > 0);
+const current = themes.themes.find((t) => t.id === DEFAULT_PAIR);
+const icon = 'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+---
+
+<div class="theme-picker">
+  <details class="theme-pair">
+    <summary>
+      <span class="dot" aria-hidden="true"></span>
+      <span>Theme</span>
+      <span class="sr-only" data-theme-pair-name>{displayName(current)}</span>
+      <Fragment set:html={`<svg class="caret" ${icon}><path d="m6 9 6 6 6-6"/></svg>`} />
+    </summary>
+    <div class="theme-panel">
+      <p class="theme-note">Same themes as the MinusPod app</p>
+      {groups.map(({ group, items }) => (
+        <div class="theme-group">
+          <p class="theme-group-title">{group}</p>
+          <ul>
+            {items.map((t) => (
+              <li>
+                <button type="button" data-theme-pair={t.id} aria-pressed={t.id === DEFAULT_PAIR} data-accent={t.accentColor} title={modeTitle(t)}>
+                  <span class="dot" style={`--theme-accent: ${t.accentColor}`} aria-hidden="true"></span>
+                  <span class="theme-name">{displayName(t)}</span>{modeSuffix(t) && <span class="theme-only">{modeSuffix(t)}</span>}
+                  <Fragment set:html={`<svg class="check" ${icon}><path d="M20 6 9 17l-5-5"/></svg>`} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </details>
+  <button type="button" class="theme-mode" data-theme-mode aria-label="Toggle theme">
+    <Fragment set:html={`<svg class="icon-sun" ${icon}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><svg class="icon-moon" ${icon}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`} />
+  </button>
+</div>

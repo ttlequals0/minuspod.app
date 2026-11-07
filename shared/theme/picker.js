@@ -1,21 +1,20 @@
 import { readTheme, resolveMode, writeTheme } from './store.js';
 
 export function initThemePicker(root) {
-  const pairSels = Array.from(root.querySelectorAll('select[data-theme-pair]'));
-  const modeSels = Array.from(root.querySelectorAll('select[data-theme-mode]'));
-  if (!pairSels.length || !modeSels.length) return;
-  const pairIds = Array.from(pairSels[0].options, (o) => o.value);
+  const pairButtons = Array.from(root.querySelectorAll('button[data-theme-pair]'));
+  const modeButtons = Array.from(root.querySelectorAll('button[data-theme-mode]'));
+  const menus = Array.from(root.querySelectorAll('details.theme-pair'));
+  if (!pairButtons.length || !modeButtons.length) return;
+  const pairIds = Array.from(new Set(pairButtons.map((b) => b.dataset.themePair)));
   const html = document.documentElement;
 
   const render = ({ pair, mode }) => {
-    pairSels.forEach((s) => {
-      s.value = pair;
-      const accent = s.selectedOptions[0]?.dataset.accent;
-      const label = s.closest('label');
-      if (accent) label?.style.setProperty('--theme-accent', accent);
-      else label?.style.removeProperty('--theme-accent');
+    const chosen = pairButtons.find((b) => b.dataset.themePair === pair);
+    pairButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themePair === pair)));
+    menus.forEach((m) => {
+      m.querySelector('[data-theme-pair-name]').textContent = chosen.querySelector('.theme-name').textContent;
+      m.style.setProperty('--theme-accent', chosen.dataset.accent || '');
     });
-    modeSels.forEach((s) => (s.value = mode));
     html.dataset.pair = pair;
     html.dataset.themeMode = mode;
     html.dataset.theme = resolveMode(mode, window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -25,12 +24,24 @@ export function initThemePicker(root) {
     render(choice);
     writeTheme(choice);
   };
+  const closeMenus = () => menus.forEach((m) => (m.open = false));
 
   renderStored();
   // bfcache restores skip scripts, so re-read the cookie
   window.addEventListener('pageshow', (e) => {
     if (e.persisted) renderStored();
   });
-  pairSels.forEach((sel) => sel.addEventListener('change', () => pick({ pair: sel.value, mode: modeSels[0].value })));
-  modeSels.forEach((sel) => sel.addEventListener('change', () => pick({ pair: pairSels[0].value, mode: sel.value })));
+  pairButtons.forEach((b) =>
+    b.addEventListener('click', () => {
+      pick({ pair: b.dataset.themePair, mode: html.dataset.themeMode });
+      closeMenus();
+      b.closest('details').querySelector('summary').focus();
+    }),
+  );
+  // as in the app header: the toggle commits the opposite of what is shown
+  modeButtons.forEach((b) =>
+    b.addEventListener('click', () => pick({ pair: html.dataset.pair, mode: html.dataset.theme === 'dark' ? 'light' : 'dark' })),
+  );
+  document.addEventListener('click', (e) => menus.forEach((m) => m.open && !m.contains(e.target) && (m.open = false)));
+  document.addEventListener('keydown', (e) => e.key === 'Escape' && closeMenus());
 }
