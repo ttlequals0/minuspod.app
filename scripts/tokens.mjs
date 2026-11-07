@@ -31,16 +31,18 @@ function braceBody(text, openIdx, what) {
 }
 
 export async function loadThemes(srcPath, scratchPath) {
-  const src = readFileSync(srcPath, 'utf8').replaceAll('import.meta.env.DEV', 'false');
+  // Vite-only env object; any read becomes undefined under plain Node
+  const src = readFileSync(srcPath, 'utf8').replaceAll('import.meta.env', '({})');
   writeFileSync(scratchPath, src);
   return import(pathToFileURL(scratchPath).href);
 }
 
 const pickKeys = (obj, keys) => Object.fromEntries(keys.filter((k) => obj?.[k] !== undefined).map((k) => [k, obj[k]]));
 
+// only THEME_VAR_KEYS per pair; a missing mode falls back to the base (Slate) values, as in the app
 export const pairVars = (base, pair, keys) => ({
-  light: { ...base.light, ...pickKeys(pair.light, keys) },
-  dark: { ...base.dark, ...pickKeys(pair.dark, keys) },
+  light: { ...pickKeys(base.light, keys), ...pickKeys(pair.light, keys) },
+  dark: { ...pickKeys(base.dark, keys), ...pickKeys(pair.dark, keys) },
 });
 
 const decls = (obj, indent) =>
@@ -52,8 +54,11 @@ export function renderTokensCss({ base, themes, defaultPair, keys }) {
   }
   const def = themes.find((t) => t.id === defaultPair);
   if (!def) throw new Error(`Default pair '${defaultPair}' not found in themes.ts`);
-  const { light, dark } = pairVars(base, def, keys);
-  const blocks = themes.map((t) => {
+  const defVars = pairVars(base, def, keys);
+  const light = { ...base.light, ...defVars.light };
+  const dark = { ...base.dark, ...defVars.dark };
+  // :root already carries the default pair, so it gets no block of its own
+  const blocks = themes.filter((t) => t.id !== defaultPair).map((t) => {
     const v = pairVars(base, t, keys);
     return `:root[data-pair="${t.id}"] {
 ${decls(v.light, '  ')}

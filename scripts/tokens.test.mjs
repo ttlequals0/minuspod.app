@@ -62,21 +62,20 @@ test('loadThemes imports a TypeScript themes file with the dev guard removed', (
 
 test('pairVars falls back to base values for a missing mode', () => {
   const out = pairVars(base, themes.THEMES[1], themes.THEME_VAR_KEYS);
-  expect(out.light).toEqual(base.light);
-  expect(out.dark.background).toBe('3 3% 10%');
-  expect(out.dark.radius).toBe('1');
+  expect(out.light).toEqual({ background: 'L', foreground: 'LF' });
+  expect(out.dark).toEqual({ background: '3 3% 10%', foreground: '0 0% 95%' });
 });
 
 test('pairVars drops variables outside THEME_VAR_KEYS', () => {
   const pair = { id: 'x', light: { background: 'XL', 'not-a-key': 'bad' }, dark: { 'other-extra': 'bad' } };
   const out = pairVars(base, pair, themes.THEME_VAR_KEYS);
-  expect(out.light).toEqual({ background: 'XL', foreground: 'LF', radius: '1' });
-  expect(out.dark).toEqual(base.dark);
+  expect(out.light).toEqual({ background: 'XL', foreground: 'LF' });
+  expect(out.dark).toEqual({ background: 'D', foreground: 'DF' });
 });
 
 test('a light-only pair emits base values for dark', () => {
   const pair = { id: 'lo', light: { background: 'XL' }, dark: null };
-  const css = renderTokensCss({ base, themes: [pair], defaultPair: 'lo', keys: themes.THEME_VAR_KEYS });
+  const css = renderTokensCss({ base, themes: [themes.THEMES[0], pair], defaultPair: 'slate', keys: themes.THEME_VAR_KEYS });
   const i = css.indexOf(':root[data-pair="lo"][data-theme="dark"] {');
   expect(css.slice(i, css.indexOf('}', i))).toContain('--background: D;');
 });
@@ -86,7 +85,7 @@ test('renderTokensCss throws for an id that is unsafe in a selector', () => {
   expect(() => renderTokensCss({ base, themes: bad, defaultPair: 'a"b', keys: themes.THEME_VAR_KEYS })).toThrow(/a"b/);
 });
 
-test('renderTokensCss emits the default pair first and one block per pair and mode', () => {
+test('renderTokensCss puts the default pair in :root and emits one block per other pair and mode', () => {
   const out = renderTokensCss({ base, themes: themes.THEMES, defaultPair: 'alpha', keys: themes.THEME_VAR_KEYS });
   expect(out.startsWith('/* Generated from MinusPod frontend/src/index.css and themes.ts. Do not edit. */')).toBe(true);
   const block = (sel) => {
@@ -95,9 +94,12 @@ test('renderTokensCss emits the default pair first and one block per pair and mo
   };
   expect(block(':root {')).toContain('color-scheme: light;');
   expect(block(':root {')).toContain('--background: 1 1% 90%;');
+  expect(block(':root {')).toContain('--radius: 1;');
+  expect(out).not.toContain(':root[data-pair="alpha"]');
   expect(block(':root[data-theme="dark"] {')).toContain('color-scheme: dark;');
   expect(block(':root[data-theme="dark"] {')).toContain('--background: 2 2% 10%;');
   expect(block(':root[data-pair="beta-dark"] {')).toContain('--background: L;');
+  expect(block(':root[data-pair="beta-dark"] {')).not.toContain('--radius');
   expect(block(':root[data-pair="beta-dark"][data-theme="dark"] {')).toContain('--background: 3 3% 10%;');
   expect(out.indexOf(':root[data-pair="slate"]')).toBeGreaterThan(out.indexOf('prefers-color-scheme'));
   expect(out).not.toContain('.dark');

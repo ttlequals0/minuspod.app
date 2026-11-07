@@ -7,7 +7,8 @@ const src = readFileSync(new URL('./bootstrap.js', import.meta.url), 'utf8');
 function run(cookie, dark) {
   const root = { dataset: {} };
   const mq = { matches: dark, listeners: [], addEventListener(_, fn) { this.listeners.push(fn); } };
-  new Function('document', 'window', src)({ cookie, documentElement: root }, { matchMedia: () => mq });
+  const doc = { documentElement: root, get cookie() { if (cookie instanceof Error) throw cookie; return cookie; } };
+  new Function('document', 'window', src)(doc, { matchMedia: () => mq });
   const flip = (matches) => mq.listeners.forEach((fn) => fn({ matches }));
   return { root, flip };
 }
@@ -33,6 +34,12 @@ describe('bootstrap behaviour', () => {
     expect(root.dataset.theme).toBe('light');
     root.dataset.themeMode = 'system';
     flip(true);
+    expect(root.dataset.theme).toBe('dark');
+  });
+  it('falls back to system mode when reading the cookie throws', () => {
+    const { root } = run(new Error('cookies blocked'), true);
+    expect(root.dataset.pair).toBeUndefined();
+    expect(root.dataset.themeMode).toBe('system');
     expect(root.dataset.theme).toBe('dark');
   });
   it('uses the configured cookie name and stays dependency-free', () => {
