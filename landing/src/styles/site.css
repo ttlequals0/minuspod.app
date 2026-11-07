@@ -115,6 +115,13 @@ main {
   max-width: 44rem;
 }
 
+.hero h1 img {
+  width: 20rem;
+  max-width: 100%;
+  height: auto;
+  vertical-align: top;
+}
+
 h1 {
   margin: 0 0 1rem;
   font-size: 1.5rem;

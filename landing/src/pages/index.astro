@@ -11,7 +11,10 @@ const description = pitch.split('. ')[0] + '.';
 
 <Base title="MinusPod" description={description}>
   <section class="hero">
-    <h1>MinusPod</h1>
+    <h1>
+      <img class="logo-light" src="/brand/logo.svg" alt="MinusPod" width="520" height="160" />
+      <img class="logo-dark" src="/brand/logo-dark.svg" alt="" width="520" height="160" aria-hidden="true" />
+    </h1>
     <p class="pitch">{pitch}</p>
     <div class="actions">
       <Button variant="primary" href="https://github.com/ttlequals0/MinusPod">View on GitHub</Button>
