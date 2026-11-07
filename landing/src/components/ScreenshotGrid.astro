@@ -1,0 +1,31 @@
+---
+interface Group {
+  label: string;
+  desktop: string | null;
+  mobile: string | null;
+  single: string | null;
+  sizes: Record<string, { w: number; h: number }>;
+}
+
+const { groups } = Astro.props as { groups: Group[] };
+---
+
+<div class="shots">
+  {groups.map((g) => {
+    const items = [
+      { file: g.desktop, alt: `${g.label}, desktop`, kind: 'desktop' },
+      { file: g.mobile, alt: `${g.label}, phone`, kind: 'mobile' },
+      { file: g.single, alt: g.label, kind: 'single' },
+    ].filter((i) => i.file);
+    return (
+      <figure class="shot">
+        <div class={`shot-images shot-${items.length > 1 ? 'pair' : 'one'}`}>
+          {items.map((i) => (
+            <img class={`shot-${i.kind}`} src={`/screenshots/${i.file}`} alt={i.alt} width={g.sizes[i.file!].w} height={g.sizes[i.file!].h} loading="lazy" decoding="async" />
+          ))}
+        </div>
+        <figcaption>{g.label}</figcaption>
+      </figure>
+    );
+  })}
+</div>

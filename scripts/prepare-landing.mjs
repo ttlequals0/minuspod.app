@@ -8,6 +8,28 @@ import { stripMarkdown } from './lib/md.mjs';
 
 export { parseVideoTable };
 
+const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+const humanize = (t) => cap(t.replace(/-/g, ' '));
+
+export function groupScreenshots(files) {
+  const groups = new Map();
+  for (const f of files) {
+    const m = /^(.+?)-(desktop|mobile)(?:-(.+))?\.png$/.exec(f);
+    const base = m ? (m[3] ? `${m[1]}-${m[3]}` : m[1]) : f.replace(/\.png$/, '');
+    if (!groups.has(base)) {
+      const label = m?.[3] ? `${humanize(m[1])} (${cap(m[3])} theme)` : humanize(base);
+      groups.set(base, { base, label, desktop: null, mobile: null, single: null });
+    }
+    groups.get(base)[m ? m[2] : 'single'] = f;
+  }
+  return [...groups.values()].sort((a, b) => (a.base < b.base ? -1 : a.base > b.base ? 1 : 0));
+}
+
+function pngSize(path) {
+  const b = readFileSync(path);
+  return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+}
+
 export function extractPitch(readme) {
   const para = readme.split(/\n\s*\n/).find((p) => p.trim().startsWith('MinusPod is'));
   if (!para) throw new Error('Pitch paragraph starting with "MinusPod is" not found');
@@ -45,11 +67,17 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
 
   const shots = readdirSync(`${main}/docs/screenshots`).filter((f) => f.endsWith('.png'));
   for (const f of shots) copyFileSync(`${main}/docs/screenshots/${f}`, `${shotsOut}/${f}`);
+  const groups = groupScreenshots(shots).map((g) => {
+    const sizes = {};
+    for (const f of [g.desktop, g.mobile, g.single]) if (f) sizes[f] = pngSize(`${shotsOut}/${f}`);
+    return { ...g, sizes };
+  });
   for (const f of BRAND) copyFileSync(`${main}/frontend/public/${f}`, `${brandOut}/${f}`);
 
   const rows = parseVideoTable(readFileSync(`${videosSrc}/README.md`, 'utf8'));
   writeFileSync(`${genOut}/videos.json`, JSON.stringify(rows, null, 2) + '\n');
+  writeFileSync(`${genOut}/screenshots.json`, JSON.stringify(groups, null, 2) + '\n');
   const pitch = extractPitch(readFileSync(`${main}/README.md`, 'utf8'));
   writeFileSync(`${genOut}/pitch.json`, JSON.stringify({ pitch }, null, 2) + '\n');
-  console.log(`prepare-landing: ${mp4s.length} videos, ${shots.length} screenshots, ${BRAND.length} brand files, ${rows.length} table rows`);
+  console.log(`prepare-landing: ${mp4s.length} videos, ${shots.length} screenshots in ${groups.length} groups, ${BRAND.length} brand files, ${rows.length} table rows`);
 }

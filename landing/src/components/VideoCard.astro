@@ -47,7 +47,8 @@ const base = `/videos/minuspod-${name}`;
       }
       video.setAttribute('aria-label', card.querySelector('h2, h3, h4')?.textContent ?? '');
       card.querySelector('.frame')?.replaceChildren(video);
-      void video.play();
+      video.focus();
+      video.play().catch(() => {});
     });
   }
 </script>
