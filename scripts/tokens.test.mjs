@@ -93,7 +93,9 @@ test('renderTokensCss emits the default pair first and one block per pair and mo
     const i = out.indexOf(sel);
     return out.slice(i, out.indexOf('}', i));
   };
+  expect(block(':root {')).toContain('color-scheme: light;');
   expect(block(':root {')).toContain('--background: 1 1% 90%;');
+  expect(block(':root[data-theme="dark"] {')).toContain('color-scheme: dark;');
   expect(block(':root[data-theme="dark"] {')).toContain('--background: 2 2% 10%;');
   expect(block(':root[data-pair="beta-dark"] {')).toContain('--background: L;');
   expect(block(':root[data-pair="beta-dark"][data-theme="dark"] {')).toContain('--background: 3 3% 10%;');
@@ -106,10 +108,9 @@ test('renderTokensCss throws for an unknown default pair', () => {
 });
 
 test('renderThemesJson orders by group then source and records mode availability', () => {
-  const out = JSON.parse(renderThemesJson(themes, 'alpha'));
+  const out = JSON.parse(renderThemesJson(themes));
   expect(out.themes.map((t) => t.id)).toEqual(['slate', 'alpha', 'beta-dark']);
   expect(out.themes[0]).toMatchObject({ id: 'slate', light: true, dark: true });
   expect(out.themes[2]).toEqual({ id: 'beta-dark', label: 'Beta Dark', group: 'Beta', accentColor: '#333333', light: false, dark: true });
-  expect(out.defaultPair).toBe('alpha');
   expect(out.groups).toEqual(['Default', 'Alpha', 'Beta']);
 });

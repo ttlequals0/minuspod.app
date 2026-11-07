@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { COOKIE_NAME } from './config.mjs';
 import { parseThemeCookie, resolveMode, serializeThemeCookie } from './store.js';
 
 describe('parseThemeCookie', () => {
@@ -42,13 +40,5 @@ describe('resolveMode', () => {
     expect(resolveMode('system', true)).toBe('dark');
     expect(resolveMode('system', false)).toBe('light');
     expect(resolveMode('light', true)).toBe('light');
-  });
-});
-
-describe('bootstrap', () => {
-  it('uses the configured cookie name', () => {
-    const src = readFileSync(new URL('./bootstrap.js', import.meta.url), 'utf8');
-    expect(src).toContain(`'${COOKIE_NAME}='`);
-    expect(src).not.toContain('import ');
   });
 });

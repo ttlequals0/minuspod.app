@@ -1,15 +1,23 @@
 import { describe, test, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
+import { DEFAULT_PAIR } from '../shared/theme/config.mjs';
 
-const file = new URL('../landing/dist/index.html', import.meta.url);
-const built = existsSync(file);
-const html = built ? readFileSync(file, 'utf8') : '';
+function page(path) {
+  const file = new URL(path, import.meta.url);
+  if (existsSync(file)) return readFileSync(file, 'utf8');
+  if (process.env.CI) throw new Error(`${path} missing: run the build before npm test`);
+  return null;
+}
 
-describe.skipIf(!built)('landing built html (build landing first)', () => {
+const html = page('../landing/dist/index.html');
+const docsHtml = page('../docs/dist/index.html');
+const defaultSelected = new RegExp(`<option value="${DEFAULT_PAIR}"[^>]*selected`);
+
+describe.skipIf(!html)('landing built html (build landing first)', () => {
   test('landing header renders the theme picker with the default pair selected', () => {
     expect(html).toContain('<select data-theme-pair');
     expect(html).toContain('<option disabled>Same themes as the MinusPod app</option>');
-    expect(html).toMatch(/<option value="nord"[^>]*selected/);
+    expect(html).toMatch(defaultSelected);
     expect(html).toContain('<optgroup label="');
     expect(html).toContain('data-theme-mode');
     expect(html).toMatch(/<option value="system"[^>]*selected|<option[^>]*selected[^>]*value="system"/);
@@ -29,15 +37,11 @@ describe.skipIf(!built)('landing built html (build landing first)', () => {
   });
 });
 
-const docsFile = new URL('../docs/dist/index.html', import.meta.url);
-const docsBuilt = existsSync(docsFile);
-const docsHtml = docsBuilt ? readFileSync(docsFile, 'utf8') : '';
-
-describe.skipIf(!docsBuilt)('docs built html (build docs first)', () => {
+describe.skipIf(!docsHtml)('docs built html (build docs first)', () => {
   test('docs header renders the shared picker', () => {
     expect(docsHtml).toContain('data-theme-pair');
     expect(docsHtml).toContain('Same themes as the MinusPod app');
-    expect(docsHtml).toMatch(/<option value="nord"[^>]*selected/);
+    expect(docsHtml).toMatch(defaultSelected);
     expect(docsHtml).toContain('data-theme-mode');
   });
 

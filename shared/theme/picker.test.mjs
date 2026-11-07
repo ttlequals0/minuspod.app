@@ -24,12 +24,9 @@ describe('initThemePicker with two instances', () => {
     doc = {
       cookie: 'minuspod-theme=dracula.dark',
       documentElement: { dataset: {} },
-      querySelector: () => null,
-      dispatchEvent: () => true,
     };
     vi.stubGlobal('document', doc);
     vi.stubGlobal('location', { hostname: 'localhost' });
-    vi.stubGlobal('CustomEvent', class { constructor(type, init) { this.type = type; this.detail = init?.detail; } });
     listeners = {};
     vi.stubGlobal('window', {
       matchMedia: () => ({ matches: false }),

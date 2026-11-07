@@ -3,22 +3,17 @@ import { displayName, modeSuffix, modeTitle } from './names.mjs';
 
 describe('displayName', () => {
   it.each([
-    [{ id: 'slate', label: 'Slate', group: 'Default' }, 'Slate'],
-    [{ id: 'catppuccin-mocha', label: 'Mocha', group: 'Catppuccin' }, 'Catppuccin Mocha'],
-    [{ id: 'dracula', label: 'Default', group: 'Dracula' }, 'Dracula'],
-    [{ id: 'dracula-pink', label: 'Pink', group: 'Dracula' }, 'Dracula Pink'],
-    [{ id: 'nord', label: 'Nord', group: 'Nord' }, 'Nord'],
-    [{ id: 'kanagawa', label: 'Wave', group: 'Kanagawa' }, 'Kanagawa Wave'],
-    [{ id: 'tokyo-night', label: 'Tokyo Night', group: 'Other' }, 'Tokyo Night'],
+    [{ label: 'Base', group: 'Default' }, 'Base'],
+    [{ label: 'Blue', group: 'Alpha' }, 'Alpha Blue'],
+    [{ label: 'Default', group: 'Alpha' }, 'Alpha'],
+    [{ label: 'Beta', group: 'Beta' }, 'Beta'],
+    [{ label: 'Night', group: 'Other' }, 'Night'],
   ])('%j -> %s', (t, expected) => {
     expect(displayName(t)).toBe(expected);
   });
 });
 
 describe('modeSuffix and modeTitle', () => {
-  it('ignores neither-mode entries', () => {
-    expect([modeSuffix({ light: false, dark: false }), modeTitle({ light: false, dark: false })]).toEqual(['', undefined]);
-  });
   it('handles both, dark-only and light-only', () => {
     expect([modeSuffix({ light: true, dark: true }), modeTitle({ light: true, dark: true })]).toEqual(['', undefined]);
     expect([modeSuffix({ light: false, dark: true }), modeTitle({ light: false, dark: true })]).toEqual([

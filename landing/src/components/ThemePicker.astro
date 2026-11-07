@@ -1,27 +1,12 @@
 ---
-import themes from '../../../shared/generated/themes.json';
-import { DEFAULT_PAIR } from '../../../shared/theme/config.mjs';
-import { displayName, modeSuffix, modeTitle } from '../../../shared/theme/names.mjs';
-
-const groups = themes.groups
-  .map((group) => ({ group, items: themes.themes.filter((t) => t.group === group) }))
-  .filter((g) => g.items.length > 0);
+import PairOptions from '../../../shared/theme/PairOptions.astro';
 ---
 
 <div class="theme-picker">
   <label class="theme-pair">
     <span class="sr-only">Theme</span>
     <select data-theme-pair autocomplete="off">
-      <option disabled>Same themes as the MinusPod app</option>
-      {groups.map(({ group, items }) => (
-        <optgroup label={group}>
-          {items.map((t) => (
-            <option value={t.id} data-accent={t.accentColor} title={modeTitle(t)} selected={t.id === DEFAULT_PAIR}>
-              {displayName(t) + modeSuffix(t)}
-            </option>
-          ))}
-        </optgroup>
-      ))}
+      <PairOptions />
     </select>
   </label>
   <label class="theme-mode">

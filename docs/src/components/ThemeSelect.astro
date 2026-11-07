@@ -1,12 +1,6 @@
 ---
 import { Icon } from '@astrojs/starlight/components';
-import themes from '../../../shared/generated/themes.json';
-import { DEFAULT_PAIR } from '../../../shared/theme/config.mjs';
-import { displayName, modeSuffix, modeTitle } from '../../../shared/theme/names.mjs';
-
-const groups = themes.groups
-  .map((group) => ({ group, items: themes.themes.filter((t) => t.group === group) }))
-  .filter((g) => g.items.length > 0);
+import PairOptions from '../../../shared/theme/PairOptions.astro';
 ---
 
 <div class="theme-picker">
@@ -14,16 +8,7 @@ const groups = themes.groups
     <span class="sr-only">Theme</span>
     <span class="dot" aria-hidden="true"></span>
     <select data-theme-pair autocomplete="off">
-      <option disabled>Same themes as the MinusPod app</option>
-      {groups.map(({ group, items }) => (
-        <optgroup label={group}>
-          {items.map((t) => (
-            <option value={t.id} data-accent={t.accentColor} title={modeTitle(t)} selected={t.id === DEFAULT_PAIR}>
-              {displayName(t) + modeSuffix(t)}
-            </option>
-          ))}
-        </optgroup>
-      ))}
+      <PairOptions />
     </select>
     <Icon name="down-caret" class="icon caret" />
   </label>
@@ -130,8 +115,7 @@ const groups = themes.groups
       display: block;
     }
 
-    :global(html[data-theme-mode='light']) .mode-icons :global(.icon-laptop),
-    :global(html[data-theme-mode='dark']) .mode-icons :global(.icon-laptop) {
+    :global(html:is([data-theme-mode='light'], [data-theme-mode='dark'])) .mode-icons :global(.icon-laptop) {
       display: none;
     }
 

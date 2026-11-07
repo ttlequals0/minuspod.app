@@ -32,7 +32,6 @@ function braceBody(text, openIdx, what) {
 
 export async function loadThemes(srcPath, scratchPath) {
   const src = readFileSync(srcPath, 'utf8').replaceAll('import.meta.env.DEV', 'false');
-  mkdirSync(resolve(scratchPath, '..'), { recursive: true });
   writeFileSync(scratchPath, src);
   return import(pathToFileURL(scratchPath).href);
 }
@@ -66,31 +65,38 @@ ${decls(v.dark, '  ')}
   });
   return `/* Generated from MinusPod frontend/src/index.css and themes.ts. Do not edit. */
 :root {
+  color-scheme: light;
 ${decls(light, '  ')}
 }
 :root[data-theme="dark"] {
+  color-scheme: dark;
 ${decls(dark, '  ')}
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
 ${decls(dark, '    ')}
   }
 }
 ${blocks.join('')}`;
 }
 
-export function renderThemesJson({ THEMES, THEME_GROUPS }, defaultPair) {
+export function renderThemesJson({ THEMES, THEME_GROUPS }) {
   const themes = THEME_GROUPS.flatMap((group) =>
-    THEMES.filter((t) => t.group === group).map((t) => ({
-      id: t.id,
-      label: t.label,
-      group: t.group,
-      accentColor: t.accentColor,
-      light: t.light === null && t.dark === null ? true : t.light !== null,
-      dark: t.light === null && t.dark === null ? true : t.dark !== null,
-    })),
+    THEMES.filter((t) => t.group === group).map((t) => {
+      // both null means the base values apply in both modes
+      const neither = t.light === null && t.dark === null;
+      return {
+        id: t.id,
+        label: t.label,
+        group: t.group,
+        accentColor: t.accentColor,
+        light: neither || t.light !== null,
+        dark: neither || t.dark !== null,
+      };
+    }),
   );
-  return `${JSON.stringify({ defaultPair, groups: THEME_GROUPS, themes }, null, 2)}\n`;
+  return `${JSON.stringify({ groups: THEME_GROUPS, themes }, null, 2)}\n`;
 }
 
 if (isMain(import.meta.url)) {
@@ -100,5 +106,5 @@ if (isMain(import.meta.url)) {
   mkdirSync(outDir, { recursive: true });
   const themes = await loadThemes(`${main}/frontend/src/themes/themes.ts`, resolve(outDir, 'themes.import.ts'));
   writeFileSync(resolve(outDir, 'tokens.css'), renderTokensCss({ base: extractTokens(css), themes: themes.THEMES, defaultPair: DEFAULT_PAIR, keys: themes.THEME_VAR_KEYS }));
-  writeFileSync(resolve(outDir, 'themes.json'), renderThemesJson(themes, DEFAULT_PAIR));
+  writeFileSync(resolve(outDir, 'themes.json'), renderThemesJson(themes));
 }
