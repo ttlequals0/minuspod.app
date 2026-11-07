@@ -65,3 +65,18 @@ test('applyTheme overlays theme keys and keeps base-only keys', () => {
   expect(out.light).toEqual({ background: 'x', radius: '0.5rem' });
   expect(out.dark).toEqual({ background: 'b', success: 'g' });
 });
+
+test('extractTokens ignores declarations inside comments', () => {
+  const commented = `:root {\n  /* --old: 1 2% 3%; */\n  --background: 1 1% 1%;\n}\n.dark { /* } */ --background: 2 2% 2%; }`;
+  expect(extractTokens(commented)).toEqual({ light: { background: '1 1% 1%' }, dark: { background: '2 2% 2%' } });
+});
+
+test('extractThemePair throws for a theme without a dark mode', () => {
+  const ts = `[{\n  id: 'gamma',\n  light: {\n    background: '1 1% 1%',\n  },\n  dark: null,\n}]`;
+  expect(() => extractThemePair(ts, 'gamma')).toThrow(/gamma.*dark/);
+});
+
+test('extractThemePair accepts hyphens only in quoted keys', () => {
+  const ts = `[{\n  id: 'delta',\n  light: {\n    'card-foreground': '1 1% 1%',\n    muted-foreground: '2 2% 2%',\n    ring: '3 3% 3%',\n  },\n  dark: {\n    ring: '4 4% 4%',\n  },\n}]`;
+  expect(extractThemePair(ts, 'delta').light).toEqual({ 'card-foreground': '1 1% 1%', ring: '3 3% 3%' });
+});

@@ -1,8 +1,17 @@
-import { test, expect } from 'vitest';
+import { afterEach, beforeEach, test, expect } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { mainDir } from './main-dir.mjs';
+
+let saved;
+beforeEach(() => {
+  saved = process.env.MAIN_REPO_DIR;
+});
+afterEach(() => {
+  if (saved === undefined) delete process.env.MAIN_REPO_DIR;
+  else process.env.MAIN_REPO_DIR = saved;
+});
 
 test('uses MAIN_REPO_DIR when it holds docs/README.md', () => {
   const dir = mkdtempSync(join(tmpdir(), 'main-'));

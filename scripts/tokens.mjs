@@ -23,7 +23,8 @@ function extractBlock(css, anchor) {
 }
 
 export function extractTokens(css) {
-  return { light: extractBlock(css, ':root {'), dark: extractBlock(css, '.dark {') };
+  const plain = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  return { light: extractBlock(plain, ':root {'), dark: extractBlock(plain, '.dark {') };
 }
 
 function braceBody(text, openIdx) {
@@ -48,7 +49,7 @@ export function extractThemePair(themesTs, id) {
     if (!mm || mm[1] === 'null') throw new Error(`Theme '${id}' has no ${mode} mode`);
     const block = braceBody(body, mm.index + mm[0].length - 1);
     pair[mode] = {};
-    for (const e of block.matchAll(/^\s*(?:'([\w-]+)'|([\w-]+))\s*:\s*'([^']*)'/gm)) pair[mode][e[1] ?? e[2]] = e[3];
+    for (const e of block.matchAll(/^\s*(?:'([\w-]+)'|(\w+))\s*:\s*'([^']*)'/gm)) pair[mode][e[1] ?? e[2]] = e[3];
   }
   return pair;
 }
