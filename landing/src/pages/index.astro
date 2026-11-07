@@ -7,19 +7,21 @@ import { pitch } from '../generated/pitch.json';
 
 const demo = videos.find((v) => v.name === 'demo');
 const description = pitch.split('. ')[0] + '.';
+const detail = pitch.slice(description.length).trim();
 ---
 
 <Base title="MinusPod" description={description}>
   <section class="hero">
-    <h1>
-      <img class="logo-light" src="/brand/logo.svg" alt="MinusPod" width="520" height="160" />
+    <h1 aria-label="MinusPod">
+      <img class="logo-light" src="/brand/logo.svg" alt="" width="520" height="160" aria-hidden="true" />
       <img class="logo-dark" src="/brand/logo-dark.svg" alt="" width="520" height="160" aria-hidden="true" />
     </h1>
-    <p class="pitch">{pitch}</p>
+    <p class="pitch">{description}</p>
     <div class="actions">
       <Button variant="primary" href="https://github.com/ttlequals0/MinusPod">View on GitHub</Button>
       <Button variant="secondary" href="https://demo.minuspod.app/">Try the demo</Button>
     </div>
+    <p class="detail">{detail}</p>
   </section>
   {demo && (
     <section class="tour" aria-labelledby="tour-heading">

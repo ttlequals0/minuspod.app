@@ -56,5 +56,10 @@ export function initThemePicker(root) {
     b.addEventListener('click', () => pick({ pair: html.dataset.pair, mode: html.dataset.theme === 'dark' ? 'light' : 'dark' })),
   );
   document.addEventListener('click', (e) => menus.forEach((m) => m.open && !m.contains(e.target) && (m.open = false)));
-  document.addEventListener('keydown', (e) => e.key === 'Escape' && closeMenus());
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !menus.some((m) => m.open)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeMenus();
+  });
 }

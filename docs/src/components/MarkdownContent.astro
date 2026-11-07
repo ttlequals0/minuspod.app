@@ -1,0 +1,20 @@
+---
+import MarkdownContent from '@astrojs/starlight/components/MarkdownContent.astro';
+---
+
+<MarkdownContent><slot /></MarkdownContent>
+
+<script>
+  const observer = new ResizeObserver((entries) => {
+    for (const { target } of entries) {
+      if (target.scrollWidth > target.clientWidth) target.setAttribute('tabindex', '0');
+      else target.removeAttribute('tabindex');
+    }
+  });
+  for (const table of document.querySelectorAll('.sl-markdown-content table')) {
+    if (!table.hasAttribute('aria-label') && !table.querySelector('caption')) {
+      table.setAttribute('aria-label', 'Data table');
+    }
+    observer.observe(table);
+  }
+</script>

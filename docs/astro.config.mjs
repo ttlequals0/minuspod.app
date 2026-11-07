@@ -86,6 +86,7 @@ export default defineConfig({
       components: {
         ThemeProvider: './src/components/ThemeProvider.astro',
         ThemeSelect: './src/components/ThemeSelect.astro',
+        MarkdownContent: './src/components/MarkdownContent.astro',
       },
       title: 'MinusPod',
       logo: {
@@ -104,7 +105,7 @@ export default defineConfig({
           tag: 'link',
           attrs: {
             rel: 'stylesheet',
-            href: 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap',
+            href: 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap',
           },
         },
         ...beaconHead(),

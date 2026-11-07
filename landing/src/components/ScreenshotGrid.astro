@@ -13,7 +13,9 @@ const altFor = { desktop: (l: string) => `${l}, desktop`, mobile: (l: string) =>
     <figure class="shot">
       <div class={`shot-images shot-${g.files.length > 1 ? 'pair' : 'one'}`}>
         {g.files.map((f) => (
-          <img class={`shot-${f.kind}`} src={`/screenshots/${f.file}`} alt={altFor[f.kind](g.label)} width={f.w} height={f.h} loading="lazy" decoding="async" />
+          <a href={`/screenshots/${f.file}`} aria-label={`View ${altFor[f.kind](g.label)} at full size`}>
+            <img class={`shot-${f.kind}`} src={`/screenshots/${f.file}`} alt={altFor[f.kind](g.label)} width={f.w} height={f.h} loading="lazy" decoding="async" />
+          </a>
         ))}
       </div>
       <figcaption>{g.label}</figcaption>

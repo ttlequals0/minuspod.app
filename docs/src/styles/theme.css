@@ -23,6 +23,43 @@
   --sl-color-hairline: hsl(var(--border));
   --sl-color-hairline-light: hsl(var(--border));
   --sl-font: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --sl-text-h1: 1.5rem;
+  --sl-text-h2: 1.125rem;
+  --sl-text-h3: 1rem;
+  --sl-text-h4: 0.875rem;
+  --sl-menu-button-size: 2.75rem;
+}
+
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.sl-markdown-content :is(h1, h2, h3, h4) {
+  font-weight: 600;
+}
+
+.sl-menu-button {
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+@media (pointer: coarse) {
+  .sidebar-content :is(a, summary),
+  mobile-starlight-toc a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  site-search button,
+  .social-icons a,
+  .expressive-code .copy button {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 /* Code blocks take their own surface per mode so syntax colors stay above 4.5:1. */

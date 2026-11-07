@@ -94,13 +94,16 @@ describe('initThemePicker with two instances', () => {
     docListeners.click.forEach((fn) => fn({ target: {} }));
     expect(menus.map((m) => m.open)).toEqual([false, false]);
     menus[0].open = true;
-    docListeners.keydown.forEach((fn) => fn({ key: 'Escape' }));
+    docListeners.keydown.forEach((fn) => fn({ key: 'Escape', preventDefault() {}, stopPropagation() {} }));
     expect(menus[0].open).toBe(false);
     expect(menus[0].summary.focused).toBe(false);
   });
   it('Escape moves focus to the trigger when focus was inside the list', () => {
     doc.activeElement = { menu: menus[0] };
-    docListeners.keydown.forEach((fn) => fn({ key: 'Escape' }));
+    const event = { key: 'Escape', preventDefault: vi.fn(), stopPropagation: vi.fn() };
+    docListeners.keydown.forEach((fn) => fn(event));
+    expect(event.preventDefault).toHaveBeenCalledOnce();
+    expect(event.stopPropagation).toHaveBeenCalledOnce();
     expect(menus.map((m) => m.open)).toEqual([false, false]);
     expect(menus.map((m) => m.summary.focused)).toEqual([true, false]);
   });
