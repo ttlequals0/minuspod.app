@@ -16,6 +16,50 @@ function beaconHead() {
   ];
 }
 
+export const SIDEBAR = [
+  {
+    label: 'Get started',
+    items: ['installation', 'environment-variables', 'feeds-and-usage', 'web-interface', 'videos'],
+  },
+  {
+    label: 'Using MinusPod',
+    items: [
+      'how-it-works',
+      'workflows',
+      'configuration',
+      'audio-cues',
+      'pattern-cleanup',
+      'transcript-differential',
+      'download-history',
+      'local-feeds',
+      'youtube-feeds',
+    ],
+  },
+  {
+    label: 'Providers and transcription',
+    items: ['llm-providers', 'system-one', 'transcription', 'transcription-openvino', 'failover'],
+  },
+  {
+    label: 'Integrations',
+    items: [
+      'api-and-webhooks',
+      'podcasting-2.0',
+      'configuration-import-export',
+      { label: 'API reference', link: 'https://demo.minuspod.app/api-docs/' },
+    ],
+  },
+  { label: 'Operations', items: ['deployment', 'security-and-storage', 'container-security'] },
+  { label: 'Reference', items: ['glossary'] },
+  {
+    label: 'Contributing',
+    items: [
+      'contributing',
+      'releasing',
+      { label: 'Design specs', items: ['specs', { autogenerate: { directory: 'specs' } }] },
+    ],
+  },
+];
+
 export default defineConfig({
   site: 'https://docs.minuspod.app',
   integrations: [
@@ -42,7 +86,7 @@ export default defineConfig({
         },
         ...beaconHead(),
       ],
-      sidebar: [],
+      sidebar: SIDEBAR,
     }),
   ],
 });

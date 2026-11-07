@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const SKIP = /^([a-z][a-z0-9+.-]*:|\/\/)/i;
 const ATTR_RE = /\b(href|src|srcset|poster)="([^"]*)"/g;
@@ -64,12 +65,41 @@ function check(distDir) {
   return problems;
 }
 
-const dirs = process.argv.slice(2);
-if (!dirs.length) {
-  console.error('usage: node scripts/check-dist.mjs <distDir>...');
-  process.exit(2);
+export function collectSlugs(items) {
+  return items.flatMap((item) => {
+    if (typeof item === 'string') return [item];
+    if (item.items) return collectSlugs(item.items);
+    return item.slug ? [item.slug] : [];
+  });
 }
-const problems = dirs.flatMap(check);
-for (const p of problems) console.log(p);
-console.log(`${problems.length} problems`);
-process.exit(problems.length ? 1 : 0);
+
+async function checkSidebar(configPath, distDir) {
+  const { SIDEBAR } = await import(pathToFileURL(resolve(configPath)).href);
+  return collectSlugs(SIDEBAR)
+    .filter((slug) => !isFile(join(resolve(distDir), slug, 'index.html')))
+    .map((slug) => `sidebar: ${slug}`);
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const flag = args.indexOf('--sidebar');
+  const sidebarPath = flag === -1 ? null : args.splice(flag, 2)[1];
+  if (!args.length || (flag !== -1 && !sidebarPath)) {
+    console.error('usage: node scripts/check-dist.mjs <distDir>... [--sidebar <astro.config.mjs>]');
+    process.exit(2);
+  }
+  const dirs = args.filter((d) => {
+    if (existsSync(d)) return true;
+    console.log(`skipping missing dist dir: ${d}`);
+    return false;
+  });
+  const problems = dirs.flatMap(check);
+  if (sidebarPath && dirs.length) problems.push(...(await checkSidebar(sidebarPath, dirs[0])));
+  for (const p of problems) console.log(p);
+  console.log(`${problems.length} problems`);
+  process.exit(problems.length ? 1 : 0);
+}
+
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+  await main();
+}
