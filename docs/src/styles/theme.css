@@ -1,15 +1,25 @@
 @import "../../../shared/generated/tokens.css";
 
 :root {
+  --sl-color-white: hsl(var(--foreground));
+  --sl-color-gray-1: hsl(var(--foreground));
+  --sl-color-gray-2: hsl(var(--foreground));
+  --sl-color-gray-3: hsl(var(--muted-foreground));
+  --sl-color-gray-4: hsl(var(--muted-foreground));
+  --sl-color-gray-5: hsl(var(--muted));
+  --sl-color-gray-6: hsl(var(--card));
+  --sl-color-gray-7: hsl(var(--secondary));
+  --sl-color-black: hsl(var(--background));
+  --sl-color-bg-inline-code: hsl(var(--muted));
   --sl-color-accent: hsl(var(--primary));
   --sl-color-accent-high: hsl(var(--primary-on-tint));
-  --sl-color-text-invert: hsl(var(--primary-foreground));
   --sl-color-accent-low: hsl(var(--primary) / 0.15);
   --sl-color-bg: hsl(var(--background));
   --sl-color-bg-nav: hsl(var(--card));
   --sl-color-bg-sidebar: hsl(var(--card));
   --sl-color-text: hsl(var(--foreground));
   --sl-color-text-accent: hsl(var(--primary));
+  --sl-color-text-invert: hsl(var(--primary-foreground));
   --sl-color-hairline: hsl(var(--border));
   --sl-color-hairline-light: hsl(var(--border));
   --sl-font: "Roboto", ui-sans-serif, system-ui, sans-serif;
