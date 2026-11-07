@@ -16,7 +16,7 @@
     "prepare:landing": "node scripts/prepare-landing.mjs",
     "generate": "npm run prepare:tokens && npm run prepare:docs && npm run prepare:landing",
     "build": "npm run generate && npm run build -ws",
-    "check": "node scripts/check-dist.mjs docs/dist landing/dist --sidebar docs/astro.config.mjs",
+    "check": "node scripts/check-dist.mjs docs/dist landing/dist --sidebar docs/astro.config.mjs --host https://minuspod.app=landing/dist --host https://docs.minuspod.app=docs/dist",
     "test": "vitest run",
     "deploy:docs": "npm run build -w docs && wrangler deploy --config docs/wrangler.jsonc",
     "deploy:landing": "npm run build -w landing && wrangler deploy --config landing/wrangler.jsonc"
