@@ -44,6 +44,10 @@ const BRAND = ['logo.svg', 'logo-dark.svg', 'favicon.svg', 'apple-touch-icon.png
 
 export const posterStale = (mp4, jpg) => !existsSync(jpg) || statSync(jpg).mtimeMs <= statSync(mp4).mtimeMs;
 
+// the player derives the portrait file from the landscape link, so every table row needs both cuts
+export const missingCuts = (rows, files) =>
+  rows.flatMap((r) => [`minuspod-${r.name}.mp4`, `minuspod-${r.name}-landscape.mp4`]).filter((f) => !files.includes(f));
+
 function poster(mp4, jpg) {
   if (!posterStale(mp4, jpg)) return false;
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '1', '-i', mp4, '-frames:v', '1', '-q:v', '3', jpg], { stdio: 'pipe' });
@@ -83,6 +87,8 @@ if (isMain(import.meta.url)) {
   for (const f of BRAND) copyFileSync(`${main}/frontend/public/${f}`, `${brandOut}/${f}`);
 
   const rows = parseVideoTable(readFileSync(`${videosSrc}/README.md`, 'utf8'));
+  const missing = missingCuts(rows, mp4s);
+  if (missing.length) throw new Error(`prepare-landing: missing video cuts: ${missing.join(', ')}`);
   writeFileSync(`${genOut}/videos.json`, JSON.stringify(rows, null, 2) + '\n');
   writeFileSync(`${genOut}/screenshots.json`, JSON.stringify(groups, null, 2) + '\n');
   const pitch = extractPitch(readFileSync(`${main}/README.md`, 'utf8'));
