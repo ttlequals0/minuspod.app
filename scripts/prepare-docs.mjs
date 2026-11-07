@@ -27,6 +27,7 @@ export function rewriteLink(href, fromRel) {
       return `/${dir ? `${dir.replace(/\/$/, '')}/` : ''}${fragment}`;
     }
     if (STATIC_DIRS.includes(rel.split('/')[0])) return `/${rel}${fragment}`;
+    if (/^videos\/[^/]+\.mp4$/.test(rel)) return `https://minuspod.app/${rel}`;
   } else if (repoPath === 'README.md') {
     return `${GH}#readme`;
   } else if (repoPath === 'openapi.yaml') {
@@ -158,6 +159,7 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
   const assets = join(root, 'docs/src/assets/generated');
   mkdirSync(assets, { recursive: true });
   for (const f of ['logo.svg', 'logo-dark.svg']) cpSync(join(main, 'frontend/public', f), join(assets, f));
+  cpSync(join(main, 'frontend/public/favicon.svg'), join(root, 'docs/public/favicon.svg'));
 
   console.log(`prepare-docs: wrote ${files.length} pages`);
 }

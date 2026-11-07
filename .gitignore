@@ -22,6 +22,7 @@ demo/dist/
 shared/generated/
 docs/src/content/docs/
 docs/src/assets/generated/
+docs/public/favicon.svg
 landing/public/videos/
 landing/public/posters/
 landing/public/screenshots/

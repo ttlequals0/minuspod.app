@@ -15,6 +15,8 @@ test.each([
   ['images/wf-overview-dark.svg', 'workflows.md', '/images/wf-overview-dark.svg'],
   ['schemas/episode-sidecar.schema.json', 'local-feeds.md', '/schemas/episode-sidecar.schema.json'],
   ['DEPLOYMENT.md', 'README.md', '/deployment/'],
+  ['minuspod-demo.mp4', 'videos/README.md', 'https://minuspod.app/videos/minuspod-demo.mp4'],
+  ['render.mjs', 'videos/README.md', 'https://github.com/ttlequals0/MinusPod/blob/main/docs/videos/render.mjs'],
   ['#anchor', 'x.md', '#anchor'],
   ['https://openrouter.ai', 'x.md', 'https://openrouter.ai'],
 ])('rewriteLink(%s from %s)', (href, from, expected) => {
