@@ -11,7 +11,7 @@
   },
   "scripts": {
     "fetch:main": "bash scripts/fetch-main.sh",
-    "prepare:tokens": "node scripts/prepare-tokens.mjs",
+    "prepare:tokens": "node scripts/tokens.mjs",
     "prepare:docs": "node scripts/prepare-docs.mjs",
     "prepare:landing": "node scripts/prepare-landing.mjs",
     "generate": "npm run prepare:tokens && npm run prepare:docs && npm run prepare:landing",

@@ -17,4 +17,6 @@ Content comes from a checkout of the MinusPod main repo, which is never committe
 3. `npm run build` generates content from `.main/` and builds both sites
 4. `npm test` runs the script tests
 
+Pushes to main, docs-updated dispatches and manual runs deploy both sites through `.github/workflows/site.yml`.
+
 To build against another checkout, run `MAIN_REPO_DIR=$HOME/repos/MinusPod npm run build`.
