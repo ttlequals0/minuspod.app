@@ -39,10 +39,10 @@ const tabs = [
     tabs.forEach((tab, i) => {
       tab.addEventListener('click', () => select(tab.dataset.tab!));
       tab.addEventListener('keydown', (e) => {
-        const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-        if (!step) return;
+        const keys: Record<string, number> = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 };
+        if (!(e.key in keys)) return;
         e.preventDefault();
-        select(tabs[(i + step + tabs.length) % tabs.length].dataset.tab!, true);
+        select(tabs[(keys[e.key] + tabs.length) % tabs.length].dataset.tab!, true);
       });
     });
   }

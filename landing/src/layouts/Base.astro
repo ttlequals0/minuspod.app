@@ -9,6 +9,8 @@ interface Props {
 
 const { title, description } = Astro.props;
 const path = Astro.url.pathname;
+const canonical = new URL(path, Astro.site).href;
+const image = new URL('/videos/demo-landscape.jpg', Astro.site).href;
 const token = import.meta.env.PUBLIC_CF_BEACON_TOKEN_LANDING;
 const nav = [
   { label: 'Docs', href: 'https://docs.minuspod.app/' },
@@ -25,6 +27,11 @@ const nav = [
     <meta name="color-scheme" content="light dark" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content={image} />
     <link rel="icon" href="/brand/favicon.svg" />
     <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
