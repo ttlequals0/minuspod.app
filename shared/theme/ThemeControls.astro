@@ -1,0 +1,45 @@
+---
+import themes from '../generated/themes.json';
+import { DEFAULT_PAIR } from './config.mjs';
+import { displayName, modeSuffix, modeTitle } from './names.mjs';
+import './controls.css';
+
+const groups = themes.groups
+  .map((group) => ({ group, items: themes.themes.filter((t) => t.group === group) }))
+  .filter((g) => g.items.length > 0);
+const current = themes.themes.find((t) => t.id === DEFAULT_PAIR);
+const icon = { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' };
+---
+
+<div class="theme-picker">
+  <details class="theme-pair">
+    <summary>
+      <span class="dot" aria-hidden="true"></span>
+      <span>Theme</span>
+      <span class="sr-only" data-theme-pair-name>{displayName(current)}</span>
+      <svg class="caret" {...icon}><path d="m6 9 6 6 6-6" /></svg>
+    </summary>
+    <div class="theme-panel">
+      <p class="theme-note">Same themes as the MinusPod app</p>
+      {groups.map(({ group, items }) => (
+        <div class="theme-group">
+          <p class="theme-group-title">{group}</p>
+          <ul>
+            {items.map((t) => (
+              <li>
+                <button type="button" data-theme-pair={t.id} aria-pressed={t.id === DEFAULT_PAIR} data-accent={t.accentColor} title={modeTitle(t)}>
+                  <span class="dot" style={`--theme-accent: ${t.accentColor}`} aria-hidden="true"></span>
+                  <span class="theme-name">{displayName(t)}</span>{modeSuffix(t) && <span class="theme-only">{modeSuffix(t)}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </details>
+  <button type="button" class="theme-mode" data-theme-mode aria-label="Toggle theme">
+    <svg class="icon-sun" {...icon}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
+    <svg class="icon-moon" {...icon}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>
+  </button>
+</div>

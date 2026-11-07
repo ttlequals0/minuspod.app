@@ -1,0 +1,54 @@
+---
+interface Props {
+  name: string;
+  title: string;
+  seconds: number;
+  description?: string;
+}
+
+const { name, title, seconds, description } = Astro.props;
+const min = Math.floor(seconds / 60);
+const sec = seconds % 60;
+const length = min ? `${min} min ${sec} s` : `${sec} s`;
+const base = `/videos/minuspod-${name}`;
+---
+
+<figure class="video-card" data-video-card data-portrait={`${base}.mp4`}>
+  <div class="frame">
+    <picture>
+      <source srcset={`/videos/${name}-portrait.jpg`} media="(max-width: 767px)" />
+      <img src={`/videos/${name}-landscape.jpg`} alt="" width="1920" height="1080" loading="lazy" />
+    </picture>
+    <a class="play" href={`${base}-landscape.mp4`} aria-label={`Play ${title}`}>
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
+    </a>
+  </div>
+  <figcaption>
+    <h3>{title}</h3>
+    {description && <p>{description}</p>}
+    <p class="length">{length}</p>
+  </figcaption>
+</figure>
+
+<script>
+  for (const card of document.querySelectorAll<HTMLElement>('[data-video-card]')) {
+    const play = card.querySelector<HTMLAnchorElement>('.play');
+    play?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const video = document.createElement('video');
+      video.controls = true;
+      video.playsInline = true;
+      video.preload = 'none';
+      for (const [src, media] of [[play.href, '(min-width: 768px)'], [card.dataset.portrait, '']]) {
+        const source = document.createElement('source');
+        source.src = src ?? '';
+        if (media) source.media = media;
+        video.append(source);
+      }
+      video.setAttribute('aria-label', card.querySelector('h3')?.textContent ?? '');
+      card.querySelector('.frame')?.replaceChildren(video);
+      video.focus();
+      video.play().catch(() => {});
+    });
+  }
+</script>

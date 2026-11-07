@@ -1,0 +1,73 @@
+@import "../../../shared/generated/tokens.css";
+
+:root {
+  --sl-color-white: hsl(var(--foreground));
+  --sl-color-gray-1: hsl(var(--foreground));
+  --sl-color-gray-2: hsl(var(--foreground));
+  --sl-color-gray-3: hsl(var(--muted-foreground));
+  --sl-color-gray-4: hsl(var(--muted-foreground));
+  --sl-color-gray-5: hsl(var(--muted));
+  --sl-color-gray-6: hsl(var(--card));
+  --sl-color-gray-7: hsl(var(--secondary));
+  --sl-color-black: hsl(var(--background));
+  --sl-color-bg-inline-code: hsl(var(--muted));
+  --sl-color-accent: hsl(var(--primary));
+  --sl-color-accent-high: hsl(var(--primary-on-tint));
+  --sl-color-accent-low: hsl(var(--primary) / 0.15);
+  --sl-color-bg: hsl(var(--background));
+  --sl-color-bg-nav: hsl(var(--card));
+  --sl-color-bg-sidebar: hsl(var(--card));
+  --sl-color-text: hsl(var(--foreground));
+  --sl-color-text-accent: hsl(var(--primary));
+  --sl-color-text-invert: hsl(var(--primary-foreground));
+  --sl-color-hairline: hsl(var(--border));
+  --sl-color-hairline-light: hsl(var(--border));
+  --sl-font: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --sl-text-h1: 1.5rem;
+  --sl-text-h2: 1.125rem;
+  --sl-text-h3: 1rem;
+  --sl-text-h4: 0.875rem;
+  --sl-menu-button-size: 2.75rem;
+}
+
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.sl-markdown-content :is(h1, h2, h3, h4) {
+  font-weight: 600;
+}
+
+.sl-menu-button {
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+@media (pointer: coarse) {
+  .sidebar-content :is(a, summary),
+  mobile-starlight-toc a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  site-search button,
+  .social-icons a,
+  .expressive-code .copy button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Code blocks take their own surface per mode so syntax colors stay above 4.5:1. */
+html:root[data-theme] .expressive-code {
+  --ec-codeBg: var(--code-bg);
+  --ec-frm-edBg: var(--code-bg);
+  --ec-frm-trmBg: var(--code-bg);
+  --ec-frm-edActTabBg: var(--code-bg);
+}
+:root[data-theme="light"] { --code-bg: hsl(var(--card)); }
+:root[data-theme="dark"] { --code-bg: color-mix(in srgb, hsl(var(--background)) 85%, black); }

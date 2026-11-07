@@ -1,5 +1,6 @@
 # Local planning and agent files
 CLAUDE.md
+AGENTS.md
 plans/
 superpowers/
 .superpowers/
@@ -22,6 +23,7 @@ demo/dist/
 shared/generated/
 docs/src/content/docs/
 docs/src/assets/generated/
+docs/public/favicon.svg
 landing/public/videos/
 landing/public/posters/
 landing/public/screenshots/
@@ -34,3 +36,15 @@ landing/public/screenshots/
 
 # OS
 .DS_Store
+
+# Main repo checkout and generated assets
+.main/
+docs/public/images/
+docs/public/screenshots/
+docs/public/schemas/
+docs/public/examples/
+landing/public/brand/
+landing/src/generated/
+
+# Browser tooling
+.playwright-mcp/

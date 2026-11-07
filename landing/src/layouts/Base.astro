@@ -1,0 +1,77 @@
+---
+import '../../../shared/generated/tokens.css';
+import '../styles/site.css';
+import bootstrap from '../../../shared/theme/bootstrap.js?raw';
+import ThemePicker from '../components/ThemePicker.astro';
+import videos from '../generated/videos.json';
+
+interface Props {
+  title: string;
+  description: string;
+  noindex?: boolean;
+}
+
+const { title, description, noindex = false } = Astro.props;
+const path = Astro.url.pathname;
+const image = videos.some((v) => v.name === 'demo') ? new URL('/videos/demo-landscape.jpg', Astro.site).href : null;
+const token = import.meta.env.PUBLIC_CF_BEACON_TOKEN_LANDING;
+const nav = [
+  { label: 'Docs', href: 'https://docs.minuspod.app/' },
+  { label: 'Gallery', href: '/gallery/' },
+  { label: 'Demo', href: 'https://demo.minuspod.app/' },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <script is:inline set:html={bootstrap} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={new URL(path, Astro.site).href} />}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    {image && <meta property="og:image" content={image} />}
+    {image && <meta name="twitter:image" content={image} />}
+    <link rel="icon" href="/brand/favicon.svg" />
+    <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" />
+    {token && <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token })}></script>}
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="shell bar">
+        <a class="brand" href="/" aria-label="MinusPod home">
+          <img class="logo-light" src="/brand/logo.svg" alt="" width="130" height="40" aria-hidden="true" />
+          <img class="logo-dark" src="/brand/logo-dark.svg" alt="" width="130" height="40" aria-hidden="true" />
+        </a>
+        <nav aria-label="Main">
+          <ul>
+            {nav.map((item) => (
+              <li>
+                <a href={item.href} aria-current={item.href === path ? 'page' : undefined}>{item.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <ThemePicker />
+      </div>
+    </header>
+    <main id="main" class="shell">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="shell bar">
+        <a href="https://github.com/ttlequals0/MinusPod">GitHub</a>
+        <a href="https://ttlequals0.com">ttlequals0.com</a>
+      </div>
+    </footer>
+  </body>
+</html>

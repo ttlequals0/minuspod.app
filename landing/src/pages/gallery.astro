@@ -1,0 +1,20 @@
+---
+import Base from '../layouts/Base.astro';
+import Tabs from '../components/Tabs.astro';
+import VideoCard from '../components/VideoCard.astro';
+import ScreenshotGrid from '../components/ScreenshotGrid.astro';
+import videos from '../generated/videos.json';
+import screenshots from '../generated/screenshots.json';
+---
+
+<Base title="Gallery" description="Videos and screenshots of MinusPod.">
+  <h1>Gallery</h1>
+  <Tabs>
+    <div slot="videos" class="video-grid">
+      {videos.map((v) => (
+        <VideoCard name={v.name} title={v.title} seconds={v.seconds} description={v.description} />
+      ))}
+    </div>
+    <ScreenshotGrid slot="screenshots" groups={screenshots} />
+  </Tabs>
+</Base>

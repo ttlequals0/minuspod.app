@@ -1,0 +1,51 @@
+---
+import ThemeControls from '../../../shared/theme/ThemeControls.astro';
+---
+
+<ThemeControls />
+
+<script>
+  import { initThemePicker } from '../../../shared/theme/picker.js';
+  initThemePicker(document);
+</script>
+
+<style is:global>
+  /* unlayered on purpose: the shared controls.css is unlayered too, so these must not sit in a Starlight layer */
+  .theme-picker {
+    --tc-text: var(--sl-color-gray-2);
+    --tc-text-strong: var(--sl-color-white);
+    --tc-muted: var(--sl-color-gray-3);
+    --tc-hover: var(--sl-color-gray-6);
+    --tc-ring: var(--sl-color-accent);
+    --tc-border: var(--sl-color-hairline);
+    --tc-panel-bg: var(--sl-color-bg-nav);
+    --tc-row-bg: var(--sl-color-bg);
+    --tc-accent: var(--sl-color-accent);
+    --tc-selected-bg: var(--sl-color-accent-low);
+    --tc-shadow: var(--sl-shadow-md);
+    --tc-z: var(--sl-z-index-menu);
+    --tc-font-size: var(--sl-text-sm);
+  }
+
+  /* inside the mobile menu the list expands in place */
+  @media (max-width: 50rem) {
+    .mobile-preferences .theme-picker {
+      flex: 1 1 100%;
+      align-items: flex-start;
+      padding-block: 0.25rem;
+    }
+
+    .mobile-preferences .theme-pair {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .mobile-preferences .theme-panel {
+      position: static;
+      width: auto;
+      max-height: none;
+      margin-top: 0.25rem;
+      box-shadow: none;
+    }
+  }
+</style>

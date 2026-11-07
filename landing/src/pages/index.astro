@@ -1,0 +1,32 @@
+---
+import Base from '../layouts/Base.astro';
+import Button from '../components/Button.astro';
+import VideoCard from '../components/VideoCard.astro';
+import videos from '../generated/videos.json';
+import { pitch } from '../generated/pitch.json';
+
+const demo = videos.find((v) => v.name === 'demo');
+const description = pitch.split('. ')[0] + '.';
+const detail = pitch.slice(description.length).trim();
+---
+
+<Base title="MinusPod" description={description}>
+  <section class="hero">
+    <h1 aria-label="MinusPod">
+      <img class="logo-light" src="/brand/logo.svg" alt="" width="520" height="160" aria-hidden="true" />
+      <img class="logo-dark" src="/brand/logo-dark.svg" alt="" width="520" height="160" aria-hidden="true" />
+    </h1>
+    <p class="pitch">{description}</p>
+    <div class="actions">
+      <Button variant="primary" href="https://github.com/ttlequals0/MinusPod">View on GitHub</Button>
+      <Button variant="secondary" href="https://demo.minuspod.app/">Try the demo</Button>
+    </div>
+    <p class="detail">{detail}</p>
+  </section>
+  {demo && (
+    <section class="tour" aria-labelledby="tour-heading">
+      <h2 id="tour-heading">A tour of the web UI</h2>
+      <VideoCard name={demo.name} title={demo.title} seconds={demo.seconds} description={demo.description} />
+    </section>
+  )}
+</Base>
