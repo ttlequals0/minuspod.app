@@ -20,6 +20,7 @@ export const SIDEBAR = [
   {
     label: 'Get started',
     items: [
+      { link: '/', label: 'Overview' },
       { slug: 'installation', label: 'Installation' },
       { slug: 'environment-variables', label: 'Environment variables' },
       { slug: 'feeds-and-usage', label: 'Finding feeds and usage' },
@@ -83,6 +84,7 @@ export default defineConfig({
   site: 'https://docs.minuspod.app',
   integrations: [
     starlight({
+      routeMiddleware: './src/routeData.mjs',
       components: {
         ThemeProvider: './src/components/ThemeProvider.astro',
         ThemeSelect: './src/components/ThemeSelect.astro',
