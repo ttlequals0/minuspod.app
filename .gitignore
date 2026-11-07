@@ -1,0 +1,36 @@
+# Local planning and agent files
+CLAUDE.md
+plans/
+superpowers/
+.superpowers/
+.claude/
+
+# Node
+node_modules/
+*.tsbuildinfo
+npm-debug.log*
+
+# Build output
+dist/
+dist-demo/
+.astro/
+.wrangler/
+.cloudflare/
+demo/dist/
+
+# Generated from the main repo at build time
+shared/generated/
+docs/src/content/docs/
+docs/src/assets/generated/
+landing/public/videos/
+landing/public/posters/
+landing/public/screenshots/
+
+# Secrets and local env
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+
+# OS
+.DS_Store
