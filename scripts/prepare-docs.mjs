@@ -2,12 +2,11 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { mainDir } from './lib/main-dir.mjs';
-import { fenceMask, firstH1, firstParagraph, headingSlug, isNavLine, truncateWords } from './lib/md.mjs';
+import { LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isNavLine, mapSrcset, truncateWords } from './lib/md.mjs';
 import { videoIndex } from './lib/videos.mjs';
 
 const GH = 'https://github.com/ttlequals0/MinusPod';
 const STATIC_DIRS = ['images', 'screenshots', 'schemas', 'examples'];
-const LINK_RE = /(!?)\[([^\]]*)\]\(([^)\s]+)(\s+"[^"]*")?\)/g;
 const ATTR_RE = /\b(src|srcset|href|poster)="([^"]+)"/g;
 const VIDEO_LINE = /^https:\/\/github\.com\/user-attachments\/assets\/([\w-]+)$/;
 
@@ -24,7 +23,7 @@ export function rewriteLink(href, fromRel) {
     if (rel.endsWith('.md')) {
       const lower = rel.slice(0, -3).toLowerCase();
       const dir = lower.replace(/(^|\/)readme$/, '');
-      return `/${dir ? `${dir.replace(/\/$/, '')}/` : ''}${fragment}`;
+      return `/${dir ? `${dir}/` : ''}${fragment}`;
     }
     if (STATIC_DIRS.includes(rel.split('/')[0])) return `/${rel}${fragment}`;
     if (/^videos\/[^/]+\.mp4$/.test(rel)) return `https://minuspod.app/${rel}`;
@@ -54,10 +53,20 @@ function pickVideo(videos, fromRel, headingSlugNow) {
 const videoElement = (name) =>
   `<video controls preload="none" playsinline poster="https://minuspod.app/videos/${name}-landscape.jpg" src="https://minuspod.app/videos/minuspod-${name}-landscape.mp4"></video>`;
 
-const rewriteRun = (text, fromRel) =>
-  text
-    .replace(LINK_RE, (m, bang, label, href, title = '') => `${bang}[${label}](${rewriteLink(href, fromRel)}${title})`)
-    .replace(ATTR_RE, (m, attr, val) => `${attr}="${rewriteLink(val, fromRel)}"`);
+const rewriteLinks = (text, fromRel) =>
+  text.replace(
+    LINK_RE,
+    (m, bang, label, href, title = '') =>
+      `${bang}[${rewriteLinks(label, fromRel)}](${rewriteLink(href, fromRel)}${title})`,
+  );
+
+const rewriteAttrs = (text, fromRel) =>
+  text.replace(ATTR_RE, (m, attr, val) => {
+    const next = attr === 'srcset' ? mapSrcset(val, (u) => rewriteLink(u, fromRel)) : rewriteLink(val, fromRel);
+    return `${attr}="${next}"`;
+  });
+
+const rewriteRun = (text, fromRel) => rewriteAttrs(rewriteLinks(text, fromRel), fromRel);
 
 export function transformMarkdown(src, fromRel, videos = []) {
   const lines = src.split('\n');

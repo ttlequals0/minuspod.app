@@ -1,6 +1,7 @@
 import { test, expect } from 'vitest';
 import { rewriteLink, transformMarkdown } from './prepare-docs.mjs';
 import { videoIndex } from './lib/videos.mjs';
+import { headingSlug } from './lib/md.mjs';
 
 test.each([
   ['installation.md#memory-requirements', 'README.md', '/installation/#memory-requirements'],
@@ -76,4 +77,28 @@ test('leaves fenced code untouched', () => {
   const src = '# H\n\nx\n\n```bash\ncat [a](../README.md)\n```\n';
   const { body } = transformMarkdown(src, 'x.md');
   expect(body).toContain('cat [a](../README.md)');
+});
+
+test('keeps underscores in code spans and snake_case words', () => {
+  const src = '# T `A_B_C`\n\nUse `MAX_RETRY_COUNT` and snake_case_name with _emphasis_ here.\n';
+  const { frontmatter } = transformMarkdown(src, 'x.md');
+  expect(frontmatter.title).toBe('T A_B_C');
+  expect(frontmatter.description).toBe('Use MAX_RETRY_COUNT and snake_case_name with emphasis here.');
+});
+
+test('heading slugs still work', () => {
+  const src = '# H\n\n## Held for Review\n\n## The `x-y` flag\n';
+  expect(headingSlug('Held for Review')).toBe('held-for-review');
+  expect(headingSlug('The `x-y` flag')).toBe('the-x-y-flag');
+  expect(transformMarkdown(src, 'x.md').body).toContain('## Held for Review');
+});
+
+test('rewrites the target of a link wrapping an image', () => {
+  const { body } = transformMarkdown('# H\n\n[![x](images/a.png)](installation.md)\n', 'README.md');
+  expect(body).toContain('[![x](/images/a.png)](/installation/)');
+});
+
+test('rewrites every srcset candidate and keeps descriptors', () => {
+  const { body } = transformMarkdown('# H\n\n<img srcset="images/a.svg 1x, images/b.svg 2x">\n', 'x.md');
+  expect(body).toContain('srcset="/images/a.svg 1x, /images/b.svg 2x"');
 });

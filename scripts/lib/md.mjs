@@ -1,9 +1,24 @@
-const LINK_RE = /(!?)\[([^\]]*)\]\(([^)\s]+)(\s+"[^"]*")?\)/g;
+export const LINK_RE = /(!?)\[((?:[^\[\]]|\[[^\]]*\])*)\]\(([^)\s]+)(\s+"[^"]*")?\)/g;
 
-export const linkText = (s) => s.replace(LINK_RE, (_, bang, text) => (bang ? '' : text));
+export const linkText = (s) =>
+  s.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(LINK_RE, (_, bang, text) => (bang ? '' : text));
 
-export const stripMarkdown = (s) =>
-  linkText(s).replace(/`([^`]*)`/g, '$1').replace(/(\*\*|__|\*|_)(\S(?:.*?\S)?)\1/g, '$2').trim();
+// Code spans are lifted out first so their underscores and asterisks survive.
+export function stripMarkdown(s) {
+  const spans = [];
+  const lifted = linkText(s).replace(/`([^`]*)`/g, (_, code) => `\u0000${spans.push(code) - 1}\u0000`);
+  const plain = lifted
+    .replace(/(\*\*|\*)(\S(?:.*?\S)?)\1/g, '$2')
+    .replace(/(?<![A-Za-z0-9])(__|_)(\S(?:.*?\S)?)\1(?![A-Za-z0-9])/g, '$2');
+  return plain.replace(/\u0000(\d+)\u0000/g, (_, i) => spans[i]).trim();
+}
+
+export function mapSrcset(value, fn) {
+  return value
+    .split(',')
+    .map((c) => c.trim().replace(/^\S+/, (url) => fn(url)))
+    .join(', ');
+}
 
 export const headingSlug = (text) =>
   stripMarkdown(text).toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');

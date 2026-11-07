@@ -47,9 +47,15 @@ function check(distDir) {
         if (/^#/.test(value) && value.length === 1) continue;
         const hash = value.indexOf('#');
         const urlPath = (hash === -1 ? value : value.slice(0, hash)).replace(/\?.*$/, '');
-        const fragment = hash === -1 ? '' : decodeURIComponent(value.slice(hash + 1));
+        let fragment = hash === -1 ? '' : value.slice(hash + 1);
+        let ok = true;
+        try {
+          fragment = decodeURIComponent(fragment);
+        } catch {
+          ok = false;
+        }
         const target = urlPath ? resolveTarget(root, page, urlPath) : page;
-        let ok = Boolean(target);
+        ok = ok && Boolean(target);
         if (ok && fragment) ok = target.endsWith('.html') && idsOf(target).has(fragment);
         if (!ok) problems.push(`${relative(process.cwd(), page)}: ${attr}="${value}"`);
       }
