@@ -9,6 +9,19 @@ import { stripMarkdown } from './lib/md.mjs';
 const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 const humanize = (t) => cap(t.replace(/-/g, ' '));
 
+// the validator capture is a third-party site, not the app
+export const EXCLUDED_SHOTS = new Set(['podcasting-2.0-validator.png']);
+export const landingShots = (files) => files.filter((f) => f.endsWith('.png') && !EXCLUDED_SHOTS.has(f));
+
+// whole-app views first, then feature screens; unlisted screenshots follow in name order, unlisted videos in table order
+export const GALLERY_ORDER = ['dashboard', 'dashboard-nord', 'dashboard-themes', 'feed-detail', 'episode-detail', 'queue', 'history', 'stats',
+  'ads-detected', 'ad-editor', 'sponsors', 'patterns', 'cue-matches', 'cue-templates', 'cue-editor', 'settings', 'cover-art-badge'];
+export const VIDEO_ORDER = ['demo', 'how-it-works', 'processing-modes', 'review-queue', 'patterns', 'audio-cues', 'local-feeds', 'providers', 'podcasting-2', 'youtube'];
+const rank = (order, k) => {
+  const i = order.indexOf(k);
+  return i === -1 ? order.length : i;
+};
+
 export function groupScreenshots(files) {
   const groups = new Map();
   for (const f of [...files].sort()) {
@@ -20,7 +33,8 @@ export function groupScreenshots(files) {
     }
     groups.get(base).files.push({ file: f, kind: m ? m[2] : 'single' });
   }
-  return [...groups.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, g]) => g);
+  // insertion order is already alphabetical, so the stable sort keeps unlisted groups in name order
+  return [...groups.entries()].sort(([a], [b]) => rank(GALLERY_ORDER, a) - rank(GALLERY_ORDER, b)).map(([, g]) => g);
 }
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -78,7 +92,7 @@ if (isMain(import.meta.url)) {
     copyFileSync(`${posterCache}/${jpg}`, `${videosOut}/${jpg}`);
   }
 
-  const shots = readdirSync(`${main}/docs/screenshots`).filter((f) => f.endsWith('.png'));
+  const shots = landingShots(readdirSync(`${main}/docs/screenshots`));
   for (const f of shots) copyFileSync(`${main}/docs/screenshots/${f}`, `${shotsOut}/${f}`);
   const groups = groupScreenshots(shots).map((g) => ({
     label: g.label,
@@ -89,6 +103,7 @@ if (isMain(import.meta.url)) {
   const rows = parseVideoTable(readFileSync(`${videosSrc}/README.md`, 'utf8'));
   const missing = missingCuts(rows, mp4s);
   if (missing.length) throw new Error(`prepare-landing: missing video cuts: ${missing.join(', ')}`);
+  rows.sort((a, b) => rank(VIDEO_ORDER, a.name) - rank(VIDEO_ORDER, b.name));
   writeFileSync(`${genOut}/videos.json`, JSON.stringify(rows, null, 2) + '\n');
   writeFileSync(`${genOut}/screenshots.json`, JSON.stringify(groups, null, 2) + '\n');
   const pitch = extractPitch(readFileSync(`${main}/README.md`, 'utf8'));

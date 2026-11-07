@@ -1,8 +1,8 @@
 import { test, expect } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { extractPitch, groupScreenshots, missingCuts, pngSize, posterStale } from './prepare-landing.mjs';
+import { EXCLUDED_SHOTS, GALLERY_ORDER, VIDEO_ORDER, extractPitch, groupScreenshots, landingShots, missingCuts, pngSize, posterStale } from './prepare-landing.mjs';
 import { parseVideoTable } from './lib/videos.mjs';
 import { mainDir } from './lib/main-dir.mjs';
 
@@ -49,14 +49,28 @@ test('the upstream pitch is a plain non-empty paragraph', () => {
   expect(pitch).not.toContain('<');
 });
 
-test('pairs desktop and mobile screenshots and labels them', () => {
-  const groups = groupScreenshots(['ad-editor-desktop.png', 'ad-editor-mobile.png', 'dashboard-desktop-nord.png', 'dashboard-mobile-nord.png', 'dashboard-themes.png', 'podcasting-2.0-validator.png']);
+test('pairs desktop and mobile screenshots, labels them and puts whole-app views first', () => {
+  const groups = groupScreenshots(['zz-new.png', 'ad-editor-desktop.png', 'ad-editor-mobile.png', 'dashboard-desktop-nord.png', 'dashboard-mobile-nord.png', 'dashboard-themes.png', 'podcasting-2.0-validator.png']);
   expect(groups).toEqual([
-    { label: 'Ad editor', files: [{ file: 'ad-editor-desktop.png', kind: 'desktop' }, { file: 'ad-editor-mobile.png', kind: 'mobile' }] },
     { label: 'Dashboard (Nord theme)', files: [{ file: 'dashboard-desktop-nord.png', kind: 'desktop' }, { file: 'dashboard-mobile-nord.png', kind: 'mobile' }] },
     { label: 'Dashboard themes', files: [{ file: 'dashboard-themes.png', kind: 'single' }] },
+    { label: 'Ad editor', files: [{ file: 'ad-editor-desktop.png', kind: 'desktop' }, { file: 'ad-editor-mobile.png', kind: 'mobile' }] },
     { label: 'Podcasting 2.0 validator', files: [{ file: 'podcasting-2.0-validator.png', kind: 'single' }] },
+    { label: 'Zz new', files: [{ file: 'zz-new.png', kind: 'single' }] },
   ]);
+});
+
+test('landingShots keeps app PNGs and drops excluded captures', () => {
+  expect(landingShots(['ad-editor-desktop.png', 'podcasting-2.0-validator.png', 'notes.txt'])).toEqual(['ad-editor-desktop.png']);
+});
+
+test('the order lists and exclusions match the upstream screenshots and video table', () => {
+  const files = readdirSync(`${mainDir()}/docs/screenshots`);
+  for (const f of EXCLUDED_SHOTS) expect(files).toContain(f);
+  const keys = groupScreenshots(landingShots(files)).map((g) => g.files[0].file.replace(/-(desktop|mobile)(?=-|\.png$)/, '').replace(/\.png$/, ''));
+  expect(keys.sort()).toEqual([...GALLERY_ORDER].sort());
+  const names = parseVideoTable(readFileSync(`${mainDir()}/docs/videos/README.md`, 'utf8')).map((r) => r.name);
+  expect(names.sort()).toEqual([...VIDEO_ORDER].sort());
 });
 
 test('pngSize reads the header and rejects a file without the PNG signature', () => {
