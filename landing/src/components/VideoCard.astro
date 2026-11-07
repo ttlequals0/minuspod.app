@@ -13,7 +13,7 @@ const length = min ? `${min} min ${sec} s` : `${sec} s`;
 const base = `/videos/minuspod-${name}`;
 ---
 
-<figure class="video-card" data-video-card data-name={name} data-portrait={`${base}.mp4`}>
+<figure class="video-card" data-video-card data-name={name}>
   <div class="frame">
     <picture>
       <source srcset={`/videos/${name}-portrait.jpg`} media="not all and (min-width: 768px)" />
@@ -44,16 +44,12 @@ const base = `/videos/minuspod-${name}`;
       video.poster = `/videos/${card.dataset.name}-${wide ? 'landscape' : 'portrait'}.jpg`;
       // keep the poster's box while the player loads
       if (img?.naturalWidth) video.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
-      for (const [src, media] of [[play.href, '(min-width: 768px)'], [card.dataset.portrait, '']]) {
-        const source = document.createElement('source');
-        source.src = src ?? '';
-        if (media) source.media = media;
-        video.append(source);
-      }
+      // iOS never loads a preload=none video built from <source> children; set src directly
+      video.src = wide ? play.href : play.href.replace(/-landscape\.mp4$/, '.mp4');
       video.setAttribute('aria-label', card.querySelector('h3')?.textContent ?? '');
       card.querySelector('.frame')?.replaceChildren(video);
       video.focus();
-      video.play().catch(() => {});
+      video.play().catch((err) => console.warn('video play failed', err));
     });
   }
 </script>

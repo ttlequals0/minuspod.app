@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import { existsSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { extractPitch, groupScreenshots, pngSize, posterStale } from './prepare-landing.mjs';
+import { extractPitch, groupScreenshots, missingCuts, pngSize, posterStale } from './prepare-landing.mjs';
 import { parseVideoTable } from './lib/videos.mjs';
 import { mainDir } from './lib/main-dir.mjs';
 
@@ -83,4 +83,10 @@ test('posterStale is false only for a poster newer than its source', () => {
   expect(posterStale(mp4, jpg)).toBe(false);
   utimesSync(mp4, 3000, 3000);
   expect(posterStale(mp4, jpg)).toBe(true);
+});
+
+test('missingCuts names the portrait or landscape file a table row lacks', () => {
+  const rows = [{ name: 'a' }, { name: 'b' }];
+  expect(missingCuts(rows, ['minuspod-a.mp4', 'minuspod-a-landscape.mp4', 'minuspod-b-landscape.mp4'])).toEqual(['minuspod-b.mp4']);
+  expect(missingCuts(rows, ['minuspod-a.mp4', 'minuspod-a-landscape.mp4', 'minuspod-b.mp4', 'minuspod-b-landscape.mp4'])).toEqual([]);
 });
