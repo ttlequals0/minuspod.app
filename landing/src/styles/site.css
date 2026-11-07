@@ -435,7 +435,7 @@ figcaption .length {
     height: auto;
   }
 
-  .theme-pair > summary {
-    padding-inline: 0.5rem;
+  .theme-picker {
+    --tc-summary-pad: 0.5rem;
   }
 }
