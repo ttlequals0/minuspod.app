@@ -12,6 +12,12 @@ describe('parseThemeCookie', () => {
   it('falls back for an unknown pair and a bad mode', () => {
     expect(parseThemeCookie('minuspod-theme=gone.purple', ['nord'])).toEqual({ pair: 'nord', mode: 'system' });
   });
+  it('treats a doubled equals as an unknown pair', () => {
+    expect(parseThemeCookie('minuspod-theme==dracula', ['nord', 'dracula'])).toEqual({ pair: 'nord', mode: 'system' });
+  });
+  it('accepts a pair with no mode', () => {
+    expect(parseThemeCookie('minuspod-theme=dracula', ['nord', 'dracula'])).toEqual({ pair: 'dracula', mode: 'system' });
+  });
   it('falls back for garbage and for no cookie', () => {
     for (const c of ['minuspod-theme=.', '', 'minuspod-theme=']) {
       expect(parseThemeCookie(c, ['nord'])).toEqual({ pair: 'nord', mode: 'system' });

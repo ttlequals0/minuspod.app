@@ -7,7 +7,6 @@ export function displayName({ label, group }) {
 export function modeSuffix({ light, dark }) {
   if (light === dark) return '';
   return light ? ' (light only)' : ' (dark only)';
-  return '';
 }
 
 export function modeTitle({ light, dark }) {

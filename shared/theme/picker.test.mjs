@@ -3,11 +3,12 @@ import { initThemePicker } from './picker.js';
 
 function fakeSelect(values) {
   const handlers = [];
-  const label = { style: { setProperty() {} } };
+  const label = { style: { setProperty: vi.fn(), removeProperty: vi.fn() } };
   return {
     value: values[0],
     options: values.map((value) => ({ value })),
-    selectedOptions: [{ dataset: {} }],
+    selectedOptions: [{ dataset: { accent: '#123456' } }],
+    label,
     closest: () => label,
     addEventListener: (_, fn) => handlers.push(fn),
     change(value) {
@@ -18,7 +19,7 @@ function fakeSelect(values) {
 }
 
 describe('initThemePicker with two instances', () => {
-  let doc, pairs, modes, root;
+  let doc, pairs, modes, root, listeners;
   beforeEach(() => {
     doc = {
       cookie: 'minuspod-theme=dracula.dark',
@@ -29,7 +30,11 @@ describe('initThemePicker with two instances', () => {
     vi.stubGlobal('document', doc);
     vi.stubGlobal('location', { hostname: 'localhost' });
     vi.stubGlobal('CustomEvent', class { constructor(type, init) { this.type = type; this.detail = init?.detail; } });
-    vi.stubGlobal('window', { matchMedia: () => ({ matches: false }) });
+    listeners = {};
+    vi.stubGlobal('window', {
+      matchMedia: () => ({ matches: false }),
+      addEventListener: (type, fn) => (listeners[type] ??= []).push(fn),
+    });
     pairs = [fakeSelect(['nord', 'dracula']), fakeSelect(['nord', 'dracula'])];
     modes = [fakeSelect(['light', 'dark', 'system']), fakeSelect(['light', 'dark', 'system'])];
     root = {
@@ -55,5 +60,22 @@ describe('initThemePicker with two instances', () => {
     expect(doc.documentElement.dataset.theme).toBe('light');
     expect(modes[0].value).toBe('light');
     expect(doc.cookie).toContain('dracula.light');
+  });
+  it('sets the accent on every instance label', () => {
+    pairs.forEach((p) => expect(p.label.style.setProperty).toHaveBeenCalledWith('--theme-accent', '#123456'));
+  });
+  it('re-reads the cookie on a persisted pageshow', () => {
+    doc.cookie = 'minuspod-theme=nord.light';
+    listeners.pageshow.forEach((fn) => fn({ persisted: true }));
+    expect(pairs.map((p) => p.value)).toEqual(['nord', 'nord']);
+    expect(modes.map((m) => m.value)).toEqual(['light', 'light']);
+    expect(doc.documentElement.dataset.pair).toBe('nord');
+    expect(doc.documentElement.dataset.theme).toBe('light');
+  });
+  it('ignores a non-persisted pageshow', () => {
+    doc.cookie = 'minuspod-theme=nord.light';
+    listeners.pageshow.forEach((fn) => fn({ persisted: false }));
+    expect(pairs.map((p) => p.value)).toEqual(['dracula', 'dracula']);
+    expect(doc.documentElement.dataset.pair).toBe('dracula');
   });
 });

@@ -30,6 +30,7 @@ export function readTheme(pairIds) {
   try {
     return parseThemeCookie(document.cookie, pairIds);
   } catch {
+    // document.cookie can throw when cookies are blocked
     return { pair: DEFAULT_PAIR, mode: 'system' };
   }
 }

@@ -18,6 +18,7 @@ describe.skipIf(!built)('landing built html (build landing first)', () => {
   test('bootstrap script is inlined before the stylesheet', () => {
     const boot = html.indexOf('dataset.pair');
     const sheet = Math.min(...['<link rel="stylesheet"', '<style'].map((s) => html.indexOf(s)).filter((i) => i >= 0));
+    expect(sheet).toBeLessThan(Infinity);
     expect(boot).toBeGreaterThan(-1);
     expect(boot).toBeLessThan(sheet);
   });

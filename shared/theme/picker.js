@@ -5,18 +5,15 @@ export function initThemePicker(root) {
   const modeSels = Array.from(root.querySelectorAll('select[data-theme-mode]'));
   if (!pairSels.length || !modeSels.length) return;
   const pairIds = Array.from(pairSels[0].options, (o) => o.value);
-  const choice = readTheme(pairIds);
-  pairSels.forEach((s) => (s.value = choice.pair));
-  modeSels.forEach((s) => (s.value = choice.mode));
-  document.documentElement.dataset.pair = choice.pair;
-  document.documentElement.dataset.themeMode = choice.mode;
 
   const dark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
   const current = () => ({ pair: pairSels[0].value, mode: modeSels[0].value });
   const updateDots = () => {
     pairSels.forEach((s) => {
       const accent = s.selectedOptions[0]?.dataset.accent;
-      if (accent) s.closest('label')?.style.setProperty('--theme-accent', accent);
+      const label = s.closest('label');
+      if (accent) label?.style.setProperty('--theme-accent', accent);
+      else label?.style.removeProperty('--theme-accent');
     });
   };
   const emit = () => {
@@ -24,7 +21,24 @@ export function initThemePicker(root) {
     document.dispatchEvent(new CustomEvent('minuspod-theme', { detail: current() }));
   };
 
-  updateDots();
+  const apply = () => {
+    const choice = readTheme(pairIds);
+    const root = document.documentElement;
+    const resolved = resolveMode(choice.mode, dark());
+    pairSels.forEach((s) => (s.value = choice.pair));
+    modeSels.forEach((s) => (s.value = choice.mode));
+    root.dataset.pair = choice.pair;
+    root.dataset.themeMode = choice.mode;
+    root.dataset.theme = resolved;
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', resolved);
+    updateDots();
+  };
+
+  apply();
+  // bfcache restores skip scripts, so re-read the cookie
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) apply();
+  });
   pairSels.forEach((sel) =>
     sel.addEventListener('change', () => {
       pairSels.forEach((s) => (s.value = sel.value));

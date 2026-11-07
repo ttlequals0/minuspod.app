@@ -61,14 +61,33 @@ test('loadThemes imports a TypeScript themes file with the dev guard removed', (
 });
 
 test('pairVars falls back to base values for a missing mode', () => {
-  const out = pairVars(base, themes.THEMES[1]);
+  const out = pairVars(base, themes.THEMES[1], themes.THEME_VAR_KEYS);
   expect(out.light).toEqual(base.light);
   expect(out.dark.background).toBe('3 3% 10%');
   expect(out.dark.radius).toBe('1');
 });
 
+test('pairVars drops variables outside THEME_VAR_KEYS', () => {
+  const pair = { id: 'x', light: { background: 'XL', 'not-a-key': 'bad' }, dark: { 'other-extra': 'bad' } };
+  const out = pairVars(base, pair, themes.THEME_VAR_KEYS);
+  expect(out.light).toEqual({ background: 'XL', foreground: 'LF', radius: '1' });
+  expect(out.dark).toEqual(base.dark);
+});
+
+test('a light-only pair emits base values for dark', () => {
+  const pair = { id: 'lo', light: { background: 'XL' }, dark: null };
+  const css = renderTokensCss({ base, themes: [pair], defaultPair: 'lo', keys: themes.THEME_VAR_KEYS });
+  const i = css.indexOf(':root[data-pair="lo"][data-theme="dark"] {');
+  expect(css.slice(i, css.indexOf('}', i))).toContain('--background: D;');
+});
+
+test('renderTokensCss throws for an id that is unsafe in a selector', () => {
+  const bad = [{ id: 'a"b', light: null, dark: null }];
+  expect(() => renderTokensCss({ base, themes: bad, defaultPair: 'a"b', keys: themes.THEME_VAR_KEYS })).toThrow(/a"b/);
+});
+
 test('renderTokensCss emits the default pair first and one block per pair and mode', () => {
-  const out = renderTokensCss({ base, themes: themes.THEMES, defaultPair: 'alpha' });
+  const out = renderTokensCss({ base, themes: themes.THEMES, defaultPair: 'alpha', keys: themes.THEME_VAR_KEYS });
   expect(out.startsWith('/* Generated from MinusPod frontend/src/index.css and themes.ts. Do not edit. */')).toBe(true);
   const block = (sel) => {
     const i = out.indexOf(sel);
@@ -83,7 +102,7 @@ test('renderTokensCss emits the default pair first and one block per pair and mo
 });
 
 test('renderTokensCss throws for an unknown default pair', () => {
-  expect(() => renderTokensCss({ base, themes: themes.THEMES, defaultPair: 'nope' })).toThrow("Default pair 'nope' not found in themes.ts");
+  expect(() => renderTokensCss({ base, themes: themes.THEMES, defaultPair: 'nope', keys: themes.THEME_VAR_KEYS })).toThrow("Default pair 'nope' not found in themes.ts");
 });
 
 test('renderThemesJson orders by group then source and records mode availability', () => {

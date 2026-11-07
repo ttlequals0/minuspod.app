@@ -37,20 +37,25 @@ export async function loadThemes(srcPath, scratchPath) {
   return import(pathToFileURL(scratchPath).href);
 }
 
-export const pairVars = (base, pair) => ({
-  light: { ...base.light, ...(pair.light ?? {}) },
-  dark: { ...base.dark, ...(pair.dark ?? {}) },
+const pickKeys = (obj, keys) => Object.fromEntries(keys.filter((k) => obj?.[k] !== undefined).map((k) => [k, obj[k]]));
+
+export const pairVars = (base, pair, keys) => ({
+  light: { ...base.light, ...pickKeys(pair.light, keys) },
+  dark: { ...base.dark, ...pickKeys(pair.dark, keys) },
 });
 
 const decls = (obj, indent) =>
   Object.entries(obj).map(([k, v]) => `${indent}--${k}: ${v};`).join('\n');
 
-export function renderTokensCss({ base, themes, defaultPair }) {
+export function renderTokensCss({ base, themes, defaultPair, keys }) {
+  for (const t of themes) {
+    if (!/^[a-z0-9-]+$/.test(t.id)) throw new Error(`Invalid theme id '${t.id}' in themes.ts`);
+  }
   const def = themes.find((t) => t.id === defaultPair);
   if (!def) throw new Error(`Default pair '${defaultPair}' not found in themes.ts`);
-  const { light, dark } = pairVars(base, def);
+  const { light, dark } = pairVars(base, def, keys);
   const blocks = themes.map((t) => {
-    const v = pairVars(base, t);
+    const v = pairVars(base, t, keys);
     return `:root[data-pair="${t.id}"] {
 ${decls(v.light, '  ')}
 }
@@ -94,6 +99,6 @@ if (isMain(import.meta.url)) {
   const outDir = resolve(repoRoot, 'shared/generated');
   mkdirSync(outDir, { recursive: true });
   const themes = await loadThemes(`${main}/frontend/src/themes/themes.ts`, resolve(outDir, 'themes.import.ts'));
-  writeFileSync(resolve(outDir, 'tokens.css'), renderTokensCss({ base: extractTokens(css), themes: themes.THEMES, defaultPair: DEFAULT_PAIR }));
+  writeFileSync(resolve(outDir, 'tokens.css'), renderTokensCss({ base: extractTokens(css), themes: themes.THEMES, defaultPair: DEFAULT_PAIR, keys: themes.THEME_VAR_KEYS }));
   writeFileSync(resolve(outDir, 'themes.json'), renderThemesJson(themes, DEFAULT_PAIR));
 }

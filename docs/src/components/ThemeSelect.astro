@@ -29,7 +29,11 @@ const groups = themes.groups
   </label>
   <label class="theme-mode" style="--sl-select-width: 6.25em">
     <span class="sr-only">Color mode</span>
-    <Icon name="laptop" class="icon label-icon" />
+    <span class="mode-icons">
+      <Icon name="sun" class="icon label-icon icon-sun" />
+      <Icon name="moon" class="icon label-icon icon-moon" />
+      <Icon name="laptop" class="icon label-icon icon-laptop" />
+    </span>
     <select data-theme-mode autocomplete="off">
       <option value="light">Light</option>
       <option value="dark">Dark</option>
@@ -114,6 +118,21 @@ const groups = themes.groups
     .label-icon {
       font-size: var(--sl-label-icon-size);
       inset-inline-start: 0;
+    }
+
+    .mode-icons :global(.icon-sun),
+    .mode-icons :global(.icon-moon) {
+      display: none;
+    }
+
+    :global(html[data-theme-mode='light']) .mode-icons :global(.icon-sun),
+    :global(html[data-theme-mode='dark']) .mode-icons :global(.icon-moon) {
+      display: block;
+    }
+
+    :global(html[data-theme-mode='light']) .mode-icons :global(.icon-laptop),
+    :global(html[data-theme-mode='dark']) .mode-icons :global(.icon-laptop) {
+      display: none;
     }
 
     .caret {

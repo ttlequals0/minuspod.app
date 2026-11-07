@@ -18,5 +18,7 @@
     mq.addEventListener('change', function (e) {
       if (root.dataset.themeMode === 'system') apply(e.matches ? 'dark' : 'light');
     });
-  } catch (e) {}
+  } catch (e) {
+    // cookies blocked: keep the stylesheet defaults
+  }
 })();
