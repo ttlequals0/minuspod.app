@@ -47,6 +47,10 @@ describe.skipIf(!docsHtml)('docs built html (build docs first)', () => {
     expect(docsHtml.match(/<details class="theme-pair">/g)).toHaveLength(2);
   });
 
+  test('docs logo links to the landing page', () => {
+    expect(docsHtml).toContain('<a href="https://minuspod.app/" class="site-title');
+  });
+
   test('docs inline Starlight theme provider is replaced', () => {
     expect(docsHtml).toContain('dataset.pair');
     expect(docsHtml).not.toContain('starlight-theme');

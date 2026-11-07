@@ -13,10 +13,10 @@ const length = min ? `${min} min ${sec} s` : `${sec} s`;
 const base = `/videos/minuspod-${name}`;
 ---
 
-<figure class="video-card" data-video-card data-portrait={`${base}.mp4`}>
+<figure class="video-card" data-video-card data-name={name} data-portrait={`${base}.mp4`}>
   <div class="frame">
     <picture>
-      <source srcset={`/videos/${name}-portrait.jpg`} media="(max-width: 767px)" />
+      <source srcset={`/videos/${name}-portrait.jpg`} media="not all and (min-width: 768px)" />
       <img src={`/videos/${name}-landscape.jpg`} alt="" width="1920" height="1080" loading="lazy" />
     </picture>
     <a class="play" href={`${base}-landscape.mp4`} aria-label={`Play ${title}`}>
@@ -35,10 +35,15 @@ const base = `/videos/minuspod-${name}`;
     const play = card.querySelector<HTMLAnchorElement>('.play');
     play?.addEventListener('click', (e) => {
       e.preventDefault();
+      const wide = matchMedia('(min-width: 768px)').matches;
+      const img = card.querySelector('img');
       const video = document.createElement('video');
       video.controls = true;
       video.playsInline = true;
       video.preload = 'none';
+      video.poster = `/videos/${card.dataset.name}-${wide ? 'landscape' : 'portrait'}.jpg`;
+      // keep the poster's box while the player loads
+      if (img?.naturalWidth) video.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
       for (const [src, media] of [[play.href, '(min-width: 768px)'], [card.dataset.portrait, '']]) {
         const source = document.createElement('source');
         source.src = src ?? '';
