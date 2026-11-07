@@ -1,0 +1,66 @@
+---
+import '../../../shared/generated/tokens.css';
+import '../styles/site.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const path = Astro.url.pathname;
+const token = import.meta.env.PUBLIC_CF_BEACON_TOKEN_LANDING;
+const nav = [
+  { label: 'Docs', href: 'https://docs.minuspod.app/' },
+  { label: 'Gallery', href: '/gallery/' },
+  { label: 'Demo', href: 'https://demo.minuspod.app/' },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/brand/favicon.svg" />
+    <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" />
+    {token && <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token })}></script>}
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="shell bar">
+        <a class="brand" href="/">
+          <picture>
+            <source srcset="/brand/logo-dark.svg" media="(prefers-color-scheme: dark)" />
+            <img src="/brand/logo.svg" alt="MinusPod" width="130" height="40" />
+          </picture>
+        </a>
+        <nav aria-label="Main">
+          <ul>
+            {nav.map((item) => (
+              <li>
+                <a href={item.href} aria-current={item.href === path ? 'page' : undefined}>{item.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main id="main" class="shell">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="shell bar">
+        <a href="https://github.com/ttlequals0/MinusPod">GitHub</a>
+        <a href="https://ttlequals0.com">ttlequals0.com</a>
+      </div>
+    </footer>
+  </body>
+</html>

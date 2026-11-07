@@ -1,0 +1,53 @@
+---
+interface Props {
+  name: string;
+  title: string;
+  seconds: number;
+  description?: string;
+  headingLevel?: 2 | 3 | 4;
+}
+
+const { name, title, seconds, description, headingLevel = 3 } = Astro.props;
+const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
+const min = Math.floor(seconds / 60);
+const sec = seconds % 60;
+const length = min ? `${min} min ${sec} s` : `${sec} s`;
+const base = `/videos/minuspod-${name}`;
+---
+
+<figure class="video-card" data-video-card data-landscape={`${base}-landscape.mp4`} data-portrait={`${base}.mp4`}>
+  <div class="frame">
+    <picture>
+      <source srcset={`/videos/${name}-portrait.jpg`} media="(max-width: 767px)" />
+      <img src={`/videos/${name}-landscape.jpg`} alt="" width="1920" height="1080" loading="lazy" />
+    </picture>
+    <button type="button" class="play" aria-label={`Play ${title}`}>
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
+    </button>
+  </div>
+  <figcaption>
+    <Heading>{title}</Heading>
+    {description && <p>{description}</p>}
+    <p class="length">{length}</p>
+  </figcaption>
+</figure>
+
+<script>
+  for (const card of document.querySelectorAll<HTMLElement>('[data-video-card]')) {
+    card.querySelector('.play')?.addEventListener('click', () => {
+      const video = document.createElement('video');
+      video.controls = true;
+      video.playsInline = true;
+      video.preload = 'none';
+      for (const [src, media] of [[card.dataset.landscape, '(min-width: 768px)'], [card.dataset.portrait, '']]) {
+        const source = document.createElement('source');
+        source.src = src ?? '';
+        if (media) source.media = media;
+        video.append(source);
+      }
+      video.setAttribute('aria-label', card.querySelector('h2, h3, h4')?.textContent ?? '');
+      card.querySelector('.frame')?.replaceChildren(video);
+      void video.play();
+    });
+  }
+</script>
