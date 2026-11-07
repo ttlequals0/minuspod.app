@@ -3,9 +3,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { isMain } from './lib/cli.mjs';
-import { ATTR_RE, srcsetUrls } from './lib/md.mjs';
-
-const SKIP = /^([a-z][a-z0-9+.-]*:|\/\/)/i;
+import { ATTR_RE, isExternalHref, srcsetUrls } from './lib/md.mjs';
 
 function walk(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -53,10 +51,22 @@ function resolveTarget(distDir, pageFile, urlPath) {
 function locate(value, root, hosts) {
   for (const [origin, dir] of hosts) {
     if (value === origin || value.startsWith(`${origin}/`) || value.startsWith(`${origin}#`)) {
-      return [resolve(dir), value.slice(origin.length) || '/'];
+      const rest = value.slice(origin.length);
+      return [resolve(dir), rest.startsWith('#') ? `/${rest}` : rest || '/'];
     }
   }
-  return SKIP.test(value) ? null : [root, value];
+  return isExternalHref(value) ? null : [root, value];
+}
+
+const META_IMAGE = /<meta\b[^>]*>/g;
+const META_IMAGE_KEY = /\b(?:property="og:image"|name="twitter:image")/;
+
+function* references(html) {
+  for (const [, attr, raw] of html.matchAll(ATTR_RE)) yield [attr, raw];
+  for (const [tag] of html.matchAll(META_IMAGE)) {
+    const content = META_IMAGE_KEY.test(tag) && /\bcontent="([^"]*)"/.exec(tag);
+    if (content) yield ['content', content[1]];
+  }
 }
 
 export function check(distDir, hosts = new Map()) {
@@ -64,7 +74,7 @@ export function check(distDir, hosts = new Map()) {
   const problems = [];
   for (const page of walk(root)) {
     const html = readFileSync(page, 'utf8');
-    for (const [, attr, raw] of html.matchAll(ATTR_RE)) {
+    for (const [attr, raw] of references(html)) {
       for (const value of values(attr, raw)) {
         if (!value || value === '#') continue;
         const located = locate(value, root, hosts);
@@ -92,6 +102,7 @@ export function collectSlugs(items) {
 
 export function sidebarProblems(slugs, distDir) {
   const root = resolve(distDir);
+  if (!existsSync(root)) return [`sidebar: ${distDir} missing`];
   const listed = new Set(slugs);
   const pages = readdirSync(root, { withFileTypes: true })
     .filter((e) => e.isDirectory() && isFile(join(root, e.name, 'index.html')))
@@ -131,7 +142,7 @@ async function main() {
   const problems = dirs.flatMap((d) => check(d, hosts));
   if (opts.sidebar) {
     const { SIDEBAR } = await import(pathToFileURL(resolve(opts.sidebar)).href);
-    problems.push(...sidebarProblems(collectSlugs(SIDEBAR), dirs[0]));
+    problems.push(...sidebarProblems(collectSlugs(SIDEBAR), positionals[0]));
   }
   for (const p of problems) console.log(p);
   console.log(`${problems.length} problems`);

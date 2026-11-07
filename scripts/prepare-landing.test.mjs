@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { extractPitch, groupScreenshots, pngSize, posterStale } from './prepare-landing.mjs';
@@ -8,17 +8,44 @@ import { mainDir } from './lib/main-dir.mjs';
 
 const readme = readFileSync(`${mainDir()}/docs/videos/README.md`, 'utf8');
 
-test('parses ten videos with names, seconds and plain descriptions', () => {
-  const rows = parseVideoTable(readme);
-  expect(rows).toHaveLength(10);
-  expect(rows[0]).toMatchObject({ name: 'demo', title: 'UI tour', seconds: 108 });
-  expect(rows[1].description).toContain('Follows How It Works and Episode Processing Workflows');
-  expect(rows.map(r => r.name)).toEqual(['demo','how-it-works','review-queue','audio-cues','processing-modes','local-feeds','providers','podcasting-2','patterns','youtube']);
+const row = (title, name, secs, desc) => `| ${title} | [a](minuspod-${name}.mp4) | [b](minuspod-${name}-landscape.mp4) | ${secs} s | ${desc} |`;
+const header = '| Video | Portrait | Landscape | Length | What it shows |\n|---|---|---|---|---|\n';
+
+test('parses table rows into names, titles, seconds and plain descriptions', () => {
+  const rows = parseVideoTable(`${header}${row('UI tour', 'demo', 108, 'Dashboard and [more](../web-interface.md).')}\n${row('How it works', 'how-it-works', 107, 'One episode.')}\n`);
+  expect(rows).toEqual([
+    { name: 'demo', title: 'UI tour', seconds: 108, description: 'Dashboard and more.' },
+    { name: 'how-it-works', title: 'How it works', seconds: 107, description: 'One episode.' },
+  ]);
 });
 
-test('extracts the pitch paragraph', () => {
+test('trims a trailing source-path sentence from a description', () => {
+  const rows = parseVideoTable(`${header}${row('Modes', 'modes', 73, 'Five modes. Animated, source in [modes/](modes/).')}\n`);
+  expect(rows[0].description).toBe('Five modes.');
+});
+
+test('the upstream video table is well formed', () => {
+  const rows = parseVideoTable(readme);
+  expect(rows.length).toBeGreaterThan(0);
+  for (const r of rows) {
+    expect(r.name).toBeTruthy();
+    expect(r.title).toBeTruthy();
+    expect(r.description).toBeTruthy();
+    expect(Number.isInteger(r.seconds) && r.seconds > 0).toBe(true);
+    expect(existsSync(`${mainDir()}/docs/videos/minuspod-${r.name}-landscape.mp4`)).toBe(true);
+    expect(r.description.endsWith('/.')).toBe(false);
+  }
+});
+
+test('extracts the pitch paragraph and strips markup', () => {
+  const pitch = extractPitch('# T\n\nbadge\n\nMinusPod is a **self-hosted** server\nfor [podcasts](x.md) <br>.\n\nNext.\n');
+  expect(pitch).toBe('MinusPod is a self-hosted server for podcasts .');
+});
+
+test('the upstream pitch is a plain non-empty paragraph', () => {
   const pitch = extractPitch(readFileSync(`${mainDir()}/README.md`, 'utf8'));
-  expect(pitch.startsWith('MinusPod is a self-hosted server')).toBe(true);
+  expect(pitch.length).toBeGreaterThan(0);
+  expect(pitch).not.toMatch(/\[[^\]]*\]\([^)]*\)/);
   expect(pitch).not.toContain('<');
 });
 

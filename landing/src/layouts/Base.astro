@@ -1,6 +1,7 @@
 ---
 import '../../../shared/generated/tokens.css';
 import '../styles/site.css';
+import videos from '../generated/videos.json';
 
 interface Props {
   title: string;
@@ -10,7 +11,7 @@ interface Props {
 
 const { title, description, noindex = false } = Astro.props;
 const path = Astro.url.pathname;
-const image = new URL('/videos/demo-landscape.jpg', Astro.site).href;
+const image = videos.some((v) => v.name === 'demo') ? new URL('/videos/demo-landscape.jpg', Astro.site).href : null;
 const token = import.meta.env.PUBLIC_CF_BEACON_TOKEN_LANDING;
 const nav = [
   { label: 'Docs', href: 'https://docs.minuspod.app/' },
@@ -31,7 +32,8 @@ const nav = [
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content={image} />
+    {image && <meta property="og:image" content={image} />}
+    {image && <meta name="twitter:image" content={image} />}
     <link rel="icon" href="/brand/favicon.svg" />
     <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

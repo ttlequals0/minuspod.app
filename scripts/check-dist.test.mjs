@@ -65,6 +65,34 @@ test('check resolves mapped cross-host URLs against their dist dir', () => {
   expect(problems[1]).toMatch(/href="https:\/\/minuspod\.app\/#nope"$/);
 });
 
+test('check resolves a bare-fragment link on another host against that host index', () => {
+  const landing = tree({ 'index.html': '<h2 id="top">x</h2>' });
+  const docs = tree({
+    'index.html': '<h2 id="local">x</h2><a href="https://minuspod.app#top">ok</a><a href="https://minuspod.app#local">bad</a>',
+  });
+  const problems = check(docs, new Map([['https://minuspod.app', landing]]));
+  expect(problems).toHaveLength(1);
+  expect(problems[0]).toMatch(/href="https:\/\/minuspod\.app#local"$/);
+});
+
+test('check validates og:image and twitter:image content', () => {
+  const dist = tree({
+    'a.png': '',
+    'index.html': [
+      '<meta property="og:image" content="/a.png">',
+      '<meta name="twitter:image" content="/missing.png">',
+      '<meta property="og:title" content="/not-a-file">',
+    ].join('\n'),
+  });
+  const problems = check(dist);
+  expect(problems).toHaveLength(1);
+  expect(problems[0]).toMatch(/content="\/missing\.png"$/);
+});
+
+test('sidebarProblems reports a missing dist dir', () => {
+  expect(sidebarProblems(['a'], '/nonexistent-dist-dir')).toEqual(['sidebar: /nonexistent-dist-dir missing']);
+});
+
 test('check resolves a trailing-slash URL to a flat html file', () => {
   const docs = tree({ '404.html': '<link rel="canonical" href="https://docs.minuspod.app/404/">' });
   expect(check(docs, new Map([['https://docs.minuspod.app', docs]]))).toEqual([]);

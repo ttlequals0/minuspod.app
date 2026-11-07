@@ -2,11 +2,13 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { dirname, join, posix } from 'node:path';
 import { isMain, resetDir } from './lib/cli.mjs';
 import { mainDir, repoRoot } from './lib/main-dir.mjs';
-import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isNavLine, mapSrcset, truncateWords } from './lib/md.mjs';
+import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, truncateWords } from './lib/md.mjs';
 import { videoIndex } from './lib/videos.mjs';
 
 const GH = 'https://github.com/ttlequals0/MinusPod';
 const STATIC_DIRS = ['images', 'screenshots', 'schemas', 'examples'];
+// Sidebar frontmatter by output path relative to the docs content dir.
+const SIDEBAR_OVERRIDES = { 'specs/index.md': { label: 'Overview', order: 0 } };
 const VIDEO_LINE = /^https:\/\/github\.com\/user-attachments\/assets\/([\w-]+)$/;
 const THEMED_PICTURE = /<picture>\s*<source\b([^>]*)>\s*<img\b([^>]*?)\s*\/?>\s*<\/picture>/g;
 
@@ -14,7 +16,7 @@ const THEMED_PICTURE = /<picture>\s*<source\b([^>]*)>\s*<img\b([^>]*?)\s*\/?>\s*
 const pageKey = (rel) => rel.slice(0, -3).toLowerCase().replace(/(^|\/)readme$/, '');
 
 export function rewriteLink(href, fromRel) {
-  if (/^([a-z][a-z0-9+.-]*:|\/\/|#)/i.test(href)) return href;
+  if (isExternalHref(href) || href.startsWith('#')) return href;
   const hash = href.indexOf('#');
   const path = hash === -1 ? href : href.slice(0, hash);
   const fragment = hash === -1 ? '' : href.slice(hash);
@@ -114,10 +116,14 @@ export function transformMarkdown(src, fromRel, videos = []) {
   if (slug) frontmatter.slug = slug;
 
   let heading = '';
+  const slugs = new Set();
   const out = body.map(({ text: line, fenced: isFenced }) => {
     if (isFenced) return line;
     const h = /^#{1,6}\s+(.*)$/.exec(line);
-    if (h) heading = headingSlug(h[1]);
+    if (h) {
+      heading = headingSlug(h[1]);
+      slugs.add(heading);
+    }
     const vid = VIDEO_LINE.exec(line.trim());
     if (vid) {
       const video = pickVideo(videos, fromRel, heading);
@@ -137,20 +143,29 @@ export function transformMarkdown(src, fromRel, videos = []) {
     i = j;
   }
 
+  for (const v of videos) {
+    for (const t of v.targets) {
+      if (t.file === fromRel && t.fragment !== null && !slugs.has(t.fragment)) {
+        throw new Error(`Video target ${t.file}#${t.fragment} has no matching heading`);
+      }
+    }
+  }
+
   return { frontmatter, body: rewritten.join('\n') };
 }
 
-export const renderPage = ({ frontmatter, body }) => {
+export const renderPage = ({ frontmatter, body }, outPath = '') => {
   const fm = [`title: ${JSON.stringify(frontmatter.title)}`, `description: ${JSON.stringify(frontmatter.description)}`];
   if (frontmatter.slug !== undefined) fm.push(`slug: ${frontmatter.slug}`);
-  if (frontmatter.slug === 'specs') fm.push('sidebar:\n  label: Overview\n  order: 0');
+  const sidebar = SIDEBAR_OVERRIDES[outPath];
+  if (sidebar) fm.push(`sidebar:\n  label: ${sidebar.label}\n  order: ${sidebar.order}`);
   return `---\n${fm.join('\n')}\n---\n\n${body.replace(/^\s*\n/, '')}`;
 };
 
-function listMarkdown(docsDir, rel = '') {
+export function listMarkdown(docsDir, rel = '') {
   return readdirSync(join(docsDir, rel), { withFileTypes: true }).flatMap((e) => {
     const p = rel ? `${rel}/${e.name}` : e.name;
-    if (e.isDirectory()) return STATIC_DIRS.includes(p) ? [] : listMarkdown(docsDir, p);
+    if (e.isDirectory()) return e.name === 'node_modules' || STATIC_DIRS.includes(p) ? [] : listMarkdown(docsDir, p);
     return e.name.endsWith('.md') ? [p] : [];
   });
 }
@@ -168,9 +183,10 @@ if (isMain(import.meta.url)) {
   const files = listMarkdown(docsDir);
   for (const rel of files) {
     const page = transformMarkdown(readFileSync(join(docsDir, rel), 'utf8'), rel, videos);
-    const dest = join(outDir, outputPath(rel));
+    const out = outputPath(rel);
+    const dest = join(outDir, out);
     mkdirSync(dirname(dest), { recursive: true });
-    writeFileSync(dest, renderPage(page));
+    writeFileSync(dest, renderPage(page, out));
   }
 
   for (const name of STATIC_DIRS) {

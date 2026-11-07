@@ -2,6 +2,8 @@ export const LINK_RE = /(!?)\[((?:[^\[\]]|\[[^\]]*\])*)\]\(([^)\s]+)(\s+"[^"]*")
 
 export const ATTR_RE = /\b(href|src|srcset|poster)="([^"]*)"/g;
 
+export const isExternalHref = (href) => /^([a-z][a-z0-9+.-]*:|\/\/)/i.test(href);
+
 export const linkText = (s) => s.replace(LINK_RE, (_, bang, text) => (bang ? '' : text));
 
 // Code spans are lifted out first so their underscores and asterisks survive.
@@ -22,7 +24,7 @@ export const mapSrcset = (value, fn) =>
   splitSrcset(value).map((c) => c.replace(/^\S+/, (url) => fn(url))).join(', ');
 
 export const headingSlug = (text) =>
-  stripMarkdown(text).toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');
+  stripMarkdown(text).toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9_-]/g, '');
 
 const NAV_ITEM = /^\[[^\]]*\]\([^)]*\)$/;
 

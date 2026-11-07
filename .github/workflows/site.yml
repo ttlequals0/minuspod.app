@@ -70,7 +70,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
+      - run: npm ci --workspaces=false
       - uses: actions/download-artifact@v4
         with:
           name: site-dist

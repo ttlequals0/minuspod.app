@@ -1,7 +1,10 @@
 import { test, expect } from 'vitest';
-import { renderPage, rewriteLink, transformMarkdown } from './prepare-docs.mjs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { listMarkdown, renderPage, rewriteLink, transformMarkdown } from './prepare-docs.mjs';
 import { parseVideoTable, videoIndex } from './lib/videos.mjs';
-import { mapSrcset } from './lib/md.mjs';
+import { headingSlug, mapSrcset } from './lib/md.mjs';
 
 test.each([
   ['installation.md#memory-requirements', 'README.md', '/installation/#memory-requirements'],
@@ -135,8 +138,8 @@ test('throws on a video line with no matching table row', () => {
 
 test('labels the specs index as the sidebar overview', () => {
   const page = transformMarkdown('# Specs\n\nAll specs.\n', 'specs/README.md');
-  expect(renderPage(page)).toBe('---\ntitle: "Specs"\ndescription: "All specs."\nslug: specs\nsidebar:\n  label: Overview\n  order: 0\n---\n\nAll specs.\n');
-  expect(renderPage(transformMarkdown('# A\n\nB.\n', 'specs/a.md'))).not.toContain('sidebar:');
+  expect(renderPage(page, 'specs/index.md')).toBe('---\ntitle: "Specs"\ndescription: "All specs."\nslug: specs\nsidebar:\n  label: Overview\n  order: 0\n---\n\nAll specs.\n');
+  expect(renderPage(transformMarkdown('# A\n\nB.\n', 'specs/a.md'), 'specs/a.md')).not.toContain('sidebar:');
 });
 
 test('mapSrcset ignores a trailing empty candidate', () => {
@@ -146,4 +149,21 @@ test('mapSrcset ignores a trailing empty candidate', () => {
 test('parseVideoTable drops a trailing note that ends with a repository path', () => {
   const readme = '| Video | Portrait | Landscape | Length | What it shows |\n|---|---|---|---|---|\n| Processing modes | [a](minuspod-processing-modes.mp4) | [b](minuspod-processing-modes-landscape.mp4) | 73 s | One episode under each of the five modes, then segment categories and the remove, beep, keep and mark actions. Animated, source in [processing-modes/](processing-modes/). |\n';
   expect(parseVideoTable(readme)[0].description).toBe('One episode under each of the five modes, then segment categories and the remove, beep, keep and mark actions.');
+});
+
+test('listMarkdown skips node_modules', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'docs-'));
+  mkdirSync(join(dir, 'videos/x/node_modules/pkg'), { recursive: true });
+  writeFileSync(join(dir, 'videos/x/node_modules/pkg/README.md'), '# pkg\n');
+  writeFileSync(join(dir, 'videos/README.md'), '# v\n');
+  expect(listMarkdown(dir)).toEqual(['videos/README.md']);
+});
+
+test('headingSlug keeps underscores', () => {
+  expect(headingSlug('The `MAX_RETRY_COUNT` setting')).toBe('the-max_retry_count-setting');
+});
+
+test('throws when a video target fragment matches no heading', () => {
+  const src = '# Web Interface\n\n## Other\n\nText.\n';
+  expect(() => transformMarkdown(src, 'web-interface.md', videoIndex(videosReadme))).toThrow('Video target web-interface.md#held-for-review has no matching heading');
 });
