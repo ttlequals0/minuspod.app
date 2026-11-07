@@ -15,7 +15,8 @@ export function parseVideoTable(readme) {
   return tableRows(readme.split('\n')).flatMap((row) => {
     const m = /\(minuspod-(.+)-landscape\.mp4\)/.exec(row[2] ?? '');
     if (!m) return [];
-    return [{ name: m[1], title: row[0], seconds: parseInt(row[3], 10), description: linkText(row[4] ?? '') }];
+    const description = linkText(row[4] ?? '').replace(/(?<=\.)\s+[^.]*\/\.$/, '');
+    return [{ name: m[1], title: row[0], seconds: parseInt(row[3], 10), description }];
   });
 }
 

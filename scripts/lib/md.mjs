@@ -16,7 +16,9 @@ export function stripMarkdown(s) {
 export function mapSrcset(value, fn) {
   return value
     .split(',')
-    .map((c) => c.trim().replace(/^\S+/, (url) => fn(url)))
+    .map((c) => c.trim())
+    .filter(Boolean)
+    .map((c) => c.replace(/^\S+/, (url) => fn(url)))
     .join(', ');
 }
 

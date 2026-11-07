@@ -9,6 +9,7 @@ const GH = 'https://github.com/ttlequals0/MinusPod';
 const STATIC_DIRS = ['images', 'screenshots', 'schemas', 'examples'];
 const ATTR_RE = /\b(src|srcset|href|poster)="([^"]+)"/g;
 const VIDEO_LINE = /^https:\/\/github\.com\/user-attachments\/assets\/([\w-]+)$/;
+const THEMED_PICTURE = /<picture>\s*<source\b([^>]*)>\s*<img\b([^>]*?)\s*\/?>\s*<\/picture>/g;
 
 export function rewriteLink(href, fromRel) {
   if (/^([a-z][a-z0-9+.-]*:|\/\/|#)/i.test(href)) return href;
@@ -66,7 +67,16 @@ const rewriteAttrs = (text, fromRel) =>
     return `${attr}="${next}"`;
   });
 
-const rewriteRun = (text, fromRel) => rewriteAttrs(rewriteLinks(text, fromRel), fromRel);
+// Starlight's theme picker sets data-theme, which a prefers-color-scheme source ignores.
+const splitThemedPictures = (text) =>
+  text.replace(THEMED_PICTURE, (m, source, img) => {
+    const dark = /\bsrcset="([^"]+)"/.exec(source);
+    if (!/media="\(prefers-color-scheme:\s*dark\)"/.test(source) || !dark) return m;
+    const alt = /\balt="[^"]*"/.exec(img)?.[0] ?? 'alt=""';
+    return `<img${img} class="dark:sl-hidden">\n<img ${alt} src="${dark[1]}" class="light:sl-hidden">`;
+  });
+
+const rewriteRun = (text, fromRel) => rewriteAttrs(rewriteLinks(splitThemedPictures(text), fromRel), fromRel);
 
 export function transformMarkdown(src, fromRel, videos = []) {
   const lines = src.split('\n');
@@ -122,8 +132,7 @@ export function transformMarkdown(src, fromRel, videos = []) {
     if (vid) {
       const video = pickVideo(videos, fromRel, heading);
       if (video) return videoElement(video.name);
-      console.error(`prepare-docs: ${fromRel}: no video for asset ${vid[1]}`);
-      return line;
+      throw new Error(`prepare-docs: ${fromRel}: no row in docs/videos/README.md for video asset ${vid[1]}`);
     }
     return line;
   });
@@ -141,9 +150,10 @@ export function transformMarkdown(src, fromRel, videos = []) {
   return { frontmatter, body: rewritten.join('\n') };
 }
 
-const renderPage = ({ frontmatter, body }) => {
+export const renderPage = ({ frontmatter, body }) => {
   const fm = [`title: ${JSON.stringify(frontmatter.title)}`, `description: ${JSON.stringify(frontmatter.description)}`];
   if (frontmatter.slug !== undefined) fm.push(`slug: ${frontmatter.slug}`);
+  if (frontmatter.slug === 'specs') fm.push('sidebar:\n  label: Overview\n  order: 0');
   return `---\n${fm.join('\n')}\n---\n\n${body.replace(/^\s*\n/, '')}`;
 };
 

@@ -1,7 +1,7 @@
 import { test, expect } from 'vitest';
-import { rewriteLink, transformMarkdown } from './prepare-docs.mjs';
-import { videoIndex } from './lib/videos.mjs';
-import { headingSlug } from './lib/md.mjs';
+import { renderPage, rewriteLink, transformMarkdown } from './prepare-docs.mjs';
+import { parseVideoTable, videoIndex } from './lib/videos.mjs';
+import { headingSlug, mapSrcset } from './lib/md.mjs';
 
 test.each([
   ['installation.md#memory-requirements', 'README.md', '/installation/#memory-requirements'],
@@ -34,11 +34,12 @@ test('frontmatter skips the nav line and strips the H1', () => {
   expect(body).toContain('## Requirements');
 });
 
-test('rewrites picture sources and markdown images', () => {
-  const src = '# W\n\n<picture>\n<source media="(prefers-color-scheme: dark)" srcset="images/wf-overview-dark.svg">\n<img alt="o" src="images/wf-overview-light.svg">\n</picture>\n\n![badge](screenshots/cover-art-badge.png)\n';
+test('splits a color-scheme picture into two themed images and rewrites markdown images', () => {
+  const src = '# W\n\n<picture>\n  <source media="(prefers-color-scheme: dark)" srcset="images/wf-overview-dark.svg">\n  <img alt="o" src="images/wf-overview-light.svg">\n</picture>\n\n![badge](screenshots/cover-art-badge.png)\n';
   const { body } = transformMarkdown(src, 'workflows.md');
-  expect(body).toContain('srcset="/images/wf-overview-dark.svg"');
-  expect(body).toContain('src="/images/wf-overview-light.svg"');
+  expect(body).toContain('<img alt="o" src="/images/wf-overview-light.svg" class="dark:sl-hidden">\n<img alt="o" src="/images/wf-overview-dark.svg" class="light:sl-hidden">');
+  expect(body).not.toContain('<picture');
+  expect(body).not.toContain('<source');
   expect(body).toContain('![badge](/screenshots/cover-art-badge.png)');
 });
 
@@ -124,4 +125,32 @@ test('drops the link list but keeps prose that follows it', () => {
   const { body } = transformMarkdown(src, 'installation.md');
   expect(body).not.toContain('Contents');
   expect(body).toContain('Intro prose.');
+});
+
+test('keeps a Contents section made of cross-page links', () => {
+  const src = '# T\n\nIntro.\n\n## Contents\n\n- [Install](installation.md)\n- [Held](web-interface.md#held-for-review)\n\n## Next\n';
+  const { body } = transformMarkdown(src, 'README.md');
+  expect(body).toContain('## Contents');
+  expect(body).toContain('[Install](/installation/)');
+  expect(body).toContain('[Held](/web-interface/#held-for-review)');
+});
+
+test('throws on a video line with no matching table row', () => {
+  const src = '# H\n\nhttps://github.com/user-attachments/assets/0000-unknown\n';
+  expect(() => transformMarkdown(src, 'glossary.md', videoIndex(videosReadme))).toThrow(/glossary\.md.*0000-unknown/);
+});
+
+test('labels the specs index as the sidebar overview', () => {
+  const page = transformMarkdown('# Specs\n\nAll specs.\n', 'specs/README.md');
+  expect(renderPage(page)).toBe('---\ntitle: "Specs"\ndescription: "All specs."\nslug: specs\nsidebar:\n  label: Overview\n  order: 0\n---\n\nAll specs.\n');
+  expect(renderPage(transformMarkdown('# A\n\nB.\n', 'specs/a.md'))).not.toContain('sidebar:');
+});
+
+test('mapSrcset ignores a trailing empty candidate', () => {
+  expect(mapSrcset('a.svg 1x, b.svg 2x,', (u) => `/${u}`)).toBe('/a.svg 1x, /b.svg 2x');
+});
+
+test('parseVideoTable drops a trailing note that ends with a repository path', () => {
+  const readme = '| Video | Portrait | Landscape | Length | What it shows |\n|---|---|---|---|---|\n| Processing modes | [a](minuspod-processing-modes.mp4) | [b](minuspod-processing-modes-landscape.mp4) | 73 s | One episode under each of the five modes, then segment categories and the remove, beep, keep and mark actions. Animated, source in [processing-modes/](processing-modes/). |\n';
+  expect(parseVideoTable(readme)[0].description).toBe('One episode under each of the five modes, then segment categories and the remove, beep, keep and mark actions.');
 });

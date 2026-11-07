@@ -74,7 +74,7 @@ export const SIDEBAR = [
     items: [
       { slug: 'contributing', label: 'Contributing' },
       { slug: 'releasing', label: 'Releasing' },
-      { label: 'Design specs', items: [{ slug: 'specs', label: 'Overview' }, { autogenerate: { directory: 'specs' } }] },
+      { label: 'Design specs', items: [{ autogenerate: { directory: 'specs' } }] },
     ],
   },
 ];
