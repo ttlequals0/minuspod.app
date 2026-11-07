@@ -12,13 +12,10 @@ import ThemeControls from '../../../shared/theme/ThemeControls.astro';
 <style is:global>
   @layer starlight.components {
     .theme-picker {
+      position: relative;
       display: flex;
       align-items: center;
       gap: 0.25rem;
-    }
-
-    .theme-pair {
-      position: relative;
     }
 
     .theme-pair > summary {
@@ -148,17 +145,15 @@ import ThemeControls from '../../../shared/theme/ThemeControls.astro';
       color: var(--sl-color-gray-3);
     }
 
-    .theme-group .check {
-      display: none;
+    .theme-group button[aria-pressed='true']::after {
+      content: '';
       flex: none;
       width: 1rem;
       height: 1rem;
       margin-left: auto;
-      color: var(--sl-color-accent);
-    }
-
-    .theme-group button[aria-pressed='true'] .check {
-      display: block;
+      background: var(--sl-color-accent);
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
     }
 
     .theme-picker .dot {
@@ -167,11 +162,6 @@ import ThemeControls from '../../../shared/theme/ThemeControls.astro';
       height: 0.75rem;
       border-radius: 50%;
       background: var(--theme-accent, var(--sl-color-accent));
-    }
-
-    .theme-pair > summary .dot {
-      width: 0.625rem;
-      height: 0.625rem;
     }
 
     .theme-mode {

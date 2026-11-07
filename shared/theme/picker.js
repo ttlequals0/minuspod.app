@@ -10,9 +10,10 @@ export function initThemePicker(root) {
 
   const render = ({ pair, mode }) => {
     const chosen = pairButtons.find((b) => b.dataset.themePair === pair);
+    const label = chosen.querySelector('.theme-name').textContent;
     pairButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themePair === pair)));
     menus.forEach((m) => {
-      m.querySelector('[data-theme-pair-name]').textContent = chosen.querySelector('.theme-name').textContent;
+      m.querySelector('[data-theme-pair-name]').textContent = label;
       m.style.setProperty('--theme-accent', chosen.dataset.accent || '');
     });
     html.dataset.pair = pair;
