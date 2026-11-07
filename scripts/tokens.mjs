@@ -81,8 +81,8 @@ export function renderThemesJson({ THEMES, THEME_GROUPS }, defaultPair) {
       label: t.label,
       group: t.group,
       accentColor: t.accentColor,
-      light: t.light !== null,
-      dark: t.dark !== null,
+      light: t.light === null && t.dark === null ? true : t.light !== null,
+      dark: t.light === null && t.dark === null ? true : t.dark !== null,
     })),
   );
   return `${JSON.stringify({ defaultPair, groups: THEME_GROUPS, themes }, null, 2)}\n`;

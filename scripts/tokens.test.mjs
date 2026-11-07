@@ -89,6 +89,7 @@ test('renderTokensCss throws for an unknown default pair', () => {
 test('renderThemesJson orders by group then source and records mode availability', () => {
   const out = JSON.parse(renderThemesJson(themes, 'alpha'));
   expect(out.themes.map((t) => t.id)).toEqual(['slate', 'alpha', 'beta-dark']);
+  expect(out.themes[0]).toMatchObject({ id: 'slate', light: true, dark: true });
   expect(out.themes[2]).toEqual({ id: 'beta-dark', label: 'Beta Dark', group: 'Beta', accentColor: '#333333', light: false, dark: true });
   expect(out.defaultPair).toBe('alpha');
   expect(out.groups).toEqual(['Default', 'Alpha', 'Beta']);

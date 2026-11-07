@@ -16,6 +16,9 @@ describe('displayName', () => {
 });
 
 describe('modeSuffix and modeTitle', () => {
+  it('ignores neither-mode entries', () => {
+    expect([modeSuffix({ light: false, dark: false }), modeTitle({ light: false, dark: false })]).toEqual(['', undefined]);
+  });
   it('handles both, dark-only and light-only', () => {
     expect([modeSuffix({ light: true, dark: true }), modeTitle({ light: true, dark: true })]).toEqual(['', undefined]);
     expect([modeSuffix({ light: false, dark: true }), modeTitle({ light: false, dark: true })]).toEqual([

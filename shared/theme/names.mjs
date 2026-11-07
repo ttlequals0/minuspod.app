@@ -5,13 +5,12 @@ export function displayName({ label, group }) {
 }
 
 export function modeSuffix({ light, dark }) {
-  if (!light) return ' (dark only)';
-  if (!dark) return ' (light only)';
+  if (light === dark) return '';
+  return light ? ' (light only)' : ' (dark only)';
   return '';
 }
 
 export function modeTitle({ light, dark }) {
-  if (!light) return 'Light mode uses the default light theme';
-  if (!dark) return 'Dark mode uses the default dark theme';
-  return undefined;
+  if (light === dark) return undefined;
+  return light ? 'Dark mode uses the default dark theme' : 'Light mode uses the default light theme';
 }
