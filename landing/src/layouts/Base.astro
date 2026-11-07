@@ -1,6 +1,8 @@
 ---
 import '../../../shared/generated/tokens.css';
 import '../styles/site.css';
+import bootstrap from '../../../shared/theme/bootstrap.js?raw';
+import ThemePicker from '../components/ThemePicker.astro';
 import videos from '../generated/videos.json';
 
 interface Props {
@@ -25,6 +27,7 @@ const nav = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline set:html={bootstrap} />
     <meta name="color-scheme" content="light dark" />
     <title>{title}</title>
     <meta name="description" content={description} />
@@ -46,10 +49,8 @@ const nav = [
     <header class="site-header">
       <div class="shell bar">
         <a class="brand" href="/">
-          <picture>
-            <source srcset="/brand/logo-dark.svg" media="(prefers-color-scheme: dark)" />
-            <img src="/brand/logo.svg" alt="MinusPod" width="130" height="40" />
-          </picture>
+          <img class="logo-light" src="/brand/logo.svg" alt="MinusPod" width="130" height="40" />
+          <img class="logo-dark" src="/brand/logo-dark.svg" alt="" width="130" height="40" aria-hidden="true" />
         </a>
         <nav aria-label="Main">
           <ul>
@@ -60,6 +61,7 @@ const nav = [
             ))}
           </ul>
         </nav>
+        <ThemePicker />
       </div>
     </header>
     <main id="main" class="shell">

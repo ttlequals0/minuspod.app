@@ -42,11 +42,11 @@ jobs:
           cache: npm
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: npm ci
-      - run: npm test
       - run: npm run build
         env:
           PUBLIC_CF_BEACON_TOKEN_DOCS: ${{ vars.CF_BEACON_TOKEN_DOCS }}
           PUBLIC_CF_BEACON_TOKEN_LANDING: ${{ vars.CF_BEACON_TOKEN_LANDING }}
+      - run: npm test
       - run: npm run check
       - if: github.event_name == 'pull_request'
         run: |

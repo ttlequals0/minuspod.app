@@ -1,0 +1,40 @@
+---
+import themes from '../../../shared/generated/themes.json';
+import { DEFAULT_PAIR } from '../../../shared/theme/config.mjs';
+import { displayName, modeSuffix, modeTitle } from '../../../shared/theme/names.mjs';
+
+const groups = themes.groups
+  .map((group) => ({ group, items: themes.themes.filter((t) => t.group === group) }))
+  .filter((g) => g.items.length > 0);
+---
+
+<div class="theme-picker">
+  <label class="theme-pair">
+    <span class="sr-only">Theme</span>
+    <select data-theme-pair autocomplete="off">
+      <option disabled>Same themes as the MinusPod app</option>
+      {groups.map(({ group, items }) => (
+        <optgroup label={group}>
+          {items.map((t) => (
+            <option value={t.id} data-accent={t.accentColor} title={modeTitle(t)} selected={t.id === DEFAULT_PAIR}>
+              {displayName(t) + modeSuffix(t)}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
+  </label>
+  <label class="theme-mode">
+    <span class="sr-only">Color mode</span>
+    <select data-theme-mode autocomplete="off">
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+      <option value="system" selected>System</option>
+    </select>
+  </label>
+</div>
+
+<script>
+  import { initThemePicker } from '../../../shared/theme/picker.js';
+  initThemePicker(document);
+</script>
