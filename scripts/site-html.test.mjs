@@ -40,6 +40,10 @@ describe.skipIf(!docsBuilt)('docs built html (build docs first)', () => {
     expect(docsHtml).toContain('data-theme-mode');
   });
 
+  test('docs renders the picker in header and mobile menu', () => {
+    expect(docsHtml.match(/<select[^>]*data-theme-pair/g)).toHaveLength(2);
+  });
+
   test('docs inline Starlight theme provider is replaced', () => {
     expect(docsHtml).toContain('dataset.pair');
     expect(docsHtml).not.toContain('starlight-theme');

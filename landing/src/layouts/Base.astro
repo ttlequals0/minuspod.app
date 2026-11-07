@@ -27,8 +27,8 @@ const nav = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script is:inline set:html={bootstrap} />
     <meta name="color-scheme" content="light dark" />
+    <script is:inline set:html={bootstrap} />
     <title>{title}</title>
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={new URL(path, Astro.site).href} />}
