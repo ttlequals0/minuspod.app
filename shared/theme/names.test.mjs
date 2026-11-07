@@ -17,11 +17,11 @@ describe('modeSuffix and modeTitle', () => {
   it('handles both, dark-only and light-only', () => {
     expect([modeSuffix({ light: true, dark: true }), modeTitle({ light: true, dark: true })]).toEqual(['', undefined]);
     expect([modeSuffix({ light: false, dark: true }), modeTitle({ light: false, dark: true })]).toEqual([
-      ' (dark only)',
+      '(dark only)',
       'Light mode uses the default light theme',
     ]);
     expect([modeSuffix({ light: true, dark: false }), modeTitle({ light: true, dark: false })]).toEqual([
-      ' (light only)',
+      '(light only)',
       'Dark mode uses the default dark theme',
     ]);
   });

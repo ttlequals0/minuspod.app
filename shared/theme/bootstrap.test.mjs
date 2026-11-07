@@ -36,6 +36,11 @@ describe('bootstrap behaviour', () => {
     flip(true);
     expect(root.dataset.theme).toBe('dark');
   });
+  it('tolerates a media query list without addEventListener', () => {
+    const root = { dataset: {} };
+    new Function('document', 'window', src)({ cookie: '', documentElement: root }, { matchMedia: () => ({ matches: true }) });
+    expect(root.dataset.theme).toBe('dark');
+  });
   it('falls back to system mode when reading the cookie throws', () => {
     const { root } = run(new Error('cookies blocked'), true);
     expect(root.dataset.pair).toBeUndefined();

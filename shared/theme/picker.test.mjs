@@ -4,14 +4,17 @@ import { initThemePicker } from './picker.js';
 function fakeMenu() {
   const name = { textContent: '' };
   const summary = { focused: false, focus() { this.focused = true; } };
-  return {
+  const menu = {
     open: true,
     name,
     summary,
+    listeners: {},
     style: { props: {}, setProperty(k, v) { this.props[k] = v; } },
     querySelector: (sel) => (sel === 'summary' ? summary : name),
-    contains: () => false,
+    contains: (el) => !!el && el.menu === menu,
+    addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); },
   };
+  return menu;
 }
 
 function fakeButton(menu, dataset, text) {
@@ -93,5 +96,20 @@ describe('initThemePicker with two instances', () => {
     menus[0].open = true;
     docListeners.keydown.forEach((fn) => fn({ key: 'Escape' }));
     expect(menus[0].open).toBe(false);
+    expect(menus[0].summary.focused).toBe(false);
+  });
+  it('Escape moves focus to the trigger when focus was inside the list', () => {
+    doc.activeElement = { menu: menus[0] };
+    docListeners.keydown.forEach((fn) => fn({ key: 'Escape' }));
+    expect(menus.map((m) => m.open)).toEqual([false, false]);
+    expect(menus.map((m) => m.summary.focused)).toEqual([true, false]);
+  });
+  it('tabbing out of an open list closes it, moving within it or losing the window does not', () => {
+    const blur = (m, relatedTarget) => m.listeners.focusout.forEach((fn) => fn({ relatedTarget }));
+    blur(menus[0], { menu: menus[0] });
+    blur(menus[1], null);
+    expect(menus.map((m) => m.open)).toEqual([true, true]);
+    blur(menus[0], {});
+    expect(menus.map((m) => m.open)).toEqual([false, true]);
   });
 });

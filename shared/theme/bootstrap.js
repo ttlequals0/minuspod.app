@@ -15,7 +15,8 @@
   // dataset.themeMode is the single source of truth; the picker updates it
   root.dataset.themeMode = mode;
   root.dataset.theme = mode === 'system' ? (mq.matches ? 'dark' : 'light') : mode;
-  mq.addEventListener('change', function (e) {
+  // old Safari exposes only the deprecated addListener; skip live updates there
+  if (mq.addEventListener) mq.addEventListener('change', function (e) {
     if (root.dataset.themeMode === 'system') root.dataset.theme = e.matches ? 'dark' : 'light';
   });
 })();

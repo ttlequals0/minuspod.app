@@ -54,9 +54,8 @@ export function renderTokensCss({ base, themes, defaultPair, keys }) {
   }
   const def = themes.find((t) => t.id === defaultPair);
   if (!def) throw new Error(`Default pair '${defaultPair}' not found in themes.ts`);
-  const defVars = pairVars(base, def, keys);
-  const light = { ...base.light, ...defVars.light };
-  const dark = { ...base.dark, ...defVars.dark };
+  const light = { ...base.light, ...pickKeys(def.light, keys) };
+  const dark = { ...base.dark, ...pickKeys(def.dark, keys) };
   // :root already carries the default pair, so it gets no block of its own
   const blocks = themes.filter((t) => t.id !== defaultPair).map((t) => {
     const v = pairVars(base, t, keys);

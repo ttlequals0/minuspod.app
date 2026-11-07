@@ -25,7 +25,13 @@ export function initThemePicker(root) {
     render(choice);
     writeTheme(choice);
   };
-  const closeMenus = () => menus.forEach((m) => (m.open = false));
+  // keep keyboard focus on the trigger instead of dropping it to body
+  const closeMenus = () =>
+    menus.forEach((m) => {
+      if (!m.open) return;
+      if (m.contains(document.activeElement)) m.querySelector('summary').focus();
+      m.open = false;
+    });
 
   renderStored();
   // bfcache restores skip scripts, so re-read the cookie
@@ -35,8 +41,14 @@ export function initThemePicker(root) {
   pairButtons.forEach((b) =>
     b.addEventListener('click', () => {
       pick({ pair: b.dataset.themePair, mode: html.dataset.themeMode });
-      closeMenus();
       b.closest('details').querySelector('summary').focus();
+      closeMenus();
+    }),
+  );
+  // tabbing out of an open list closes it; a null relatedTarget (window blur) does not
+  menus.forEach((m) =>
+    m.addEventListener('focusout', (e) => {
+      if (e.relatedTarget && !m.contains(e.relatedTarget)) m.open = false;
     }),
   );
   // as in the app header: the toggle commits the opposite of what is shown

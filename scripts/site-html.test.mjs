@@ -11,7 +11,7 @@ function page(path) {
 
 const html = page('../landing/dist/index.html');
 const docsHtml = page('../docs/dist/index.html');
-const defaultPressed = new RegExp(`data-theme-pair="${DEFAULT_PAIR}" aria-pressed="true"`);
+const defaultPressed = new RegExp(`data-theme-pair="${DEFAULT_PAIR}"[^>]*aria-pressed="true"`);
 
 describe.skipIf(!html)('landing built html (build landing first)', () => {
   test('landing header renders the theme picker with the default pair pressed', () => {
