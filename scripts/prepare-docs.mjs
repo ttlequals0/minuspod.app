@@ -165,7 +165,7 @@ export const renderPage = ({ frontmatter, body }, outPath = '') => {
 export function listMarkdown(docsDir, rel = '') {
   return readdirSync(join(docsDir, rel), { withFileTypes: true }).flatMap((e) => {
     const p = rel ? `${rel}/${e.name}` : e.name;
-    if (e.isDirectory()) return e.name === 'node_modules' || STATIC_DIRS.includes(p) ? [] : listMarkdown(docsDir, p);
+    if (e.isDirectory()) return e.name === 'node_modules' || STATIC_DIRS.includes(p) || rel === 'videos' ? [] : listMarkdown(docsDir, p);
     return e.name.endsWith('.md') ? [p] : [];
   });
 }

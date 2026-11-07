@@ -4,7 +4,9 @@ export const ATTR_RE = /\b(href|src|srcset|poster)="([^"]*)"/g;
 
 export const isExternalHref = (href) => /^([a-z][a-z0-9+.-]*:|\/\/)/i.test(href);
 
-export const linkText = (s) => s.replace(LINK_RE, (_, bang, text) => (bang ? '' : text));
+// Images go first so an image wrapped in a link leaves no markdown behind.
+export const linkText = (s) =>
+  s.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(LINK_RE, (_, bang, text) => (bang ? '' : text));
 
 // Code spans are lifted out first so their underscores and asterisks survive.
 export function stripMarkdown(s) {

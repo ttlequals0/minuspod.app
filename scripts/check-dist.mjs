@@ -115,12 +115,18 @@ export function sidebarProblems(slugs, distDir) {
 }
 
 async function main() {
-  const { positionals, values: opts } = parseArgs({
-    allowPositionals: true,
-    options: { sidebar: { type: 'string' }, host: { type: 'string', multiple: true } },
-  });
-  const hosts = new Map();
+  let positionals = [];
+  let opts = {};
   let bad = false;
+  try {
+    ({ positionals, values: opts } = parseArgs({
+      allowPositionals: true,
+      options: { sidebar: { type: 'string' }, host: { type: 'string', multiple: true } },
+    }));
+  } catch {
+    bad = true;
+  }
+  const hosts = new Map();
   for (const h of opts.host ?? []) {
     const [origin, dir] = h.split('=');
     if (origin && dir) hosts.set(origin.replace(/\/$/, ''), dir);

@@ -151,12 +151,15 @@ test('parseVideoTable drops a trailing note that ends with a repository path', (
   expect(parseVideoTable(readme)[0].description).toBe('One episode under each of the five modes, then segment categories and the remove, beep, keep and mark actions.');
 });
 
-test('listMarkdown skips node_modules', () => {
+test('listMarkdown skips node_modules and video source dirs', () => {
   const dir = mkdtempSync(join(tmpdir(), 'docs-'));
-  mkdirSync(join(dir, 'videos/x/node_modules/pkg'), { recursive: true });
-  writeFileSync(join(dir, 'videos/x/node_modules/pkg/README.md'), '# pkg\n');
+  mkdirSync(join(dir, 'guides/node_modules/pkg'), { recursive: true });
+  mkdirSync(join(dir, 'videos/x'), { recursive: true });
+  writeFileSync(join(dir, 'guides/node_modules/pkg/README.md'), '# pkg\n');
+  writeFileSync(join(dir, 'guides/setup.md'), '# s\n');
+  writeFileSync(join(dir, 'videos/x/README.md'), '# x\n');
   writeFileSync(join(dir, 'videos/README.md'), '# v\n');
-  expect(listMarkdown(dir)).toEqual(['videos/README.md']);
+  expect(listMarkdown(dir).sort()).toEqual(['guides/setup.md', 'videos/README.md']);
 });
 
 test('headingSlug keeps underscores', () => {
