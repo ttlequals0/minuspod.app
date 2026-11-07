@@ -73,7 +73,8 @@ const splitThemedPictures = (text) =>
     const dark = /\bsrcset="([^"]+)"/.exec(source);
     if (!/media="\(prefers-color-scheme:\s*dark\)"/.test(source) || !dark) return m;
     const alt = /\balt="[^"]*"/.exec(img)?.[0] ?? 'alt=""';
-    return `<img${img} class="dark:sl-hidden">\n<img ${alt} src="${dark[1]}" class="light:sl-hidden">`;
+    const light = /\bclass="/.test(img) ? img.replace(/\bclass="/, 'class="dark:sl-hidden ') : `${img} class="dark:sl-hidden"`;
+    return `<img${light}>\n<img ${alt} src="${dark[1]}" class="light:sl-hidden">`;
   });
 
 const rewriteRun = (text, fromRel) => rewriteAttrs(rewriteLinks(splitThemedPictures(text), fromRel), fromRel);

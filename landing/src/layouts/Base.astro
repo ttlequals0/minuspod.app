@@ -9,7 +9,8 @@ interface Props {
 
 const { title, description } = Astro.props;
 const path = Astro.url.pathname;
-const canonical = new URL(path, Astro.site).href;
+const notFound = path.startsWith('/404');
+const canonical = notFound ? null : new URL(path, Astro.site).href;
 const image = new URL('/videos/demo-landscape.jpg', Astro.site).href;
 const token = import.meta.env.PUBLIC_CF_BEACON_TOKEN_LANDING;
 const nav = [
@@ -27,7 +28,7 @@ const nav = [
     <meta name="color-scheme" content="light dark" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {canonical ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
