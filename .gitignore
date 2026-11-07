@@ -34,3 +34,12 @@ landing/public/screenshots/
 
 # OS
 .DS_Store
+
+# Main repo checkout and generated assets
+.main/
+docs/public/images/
+docs/public/screenshots/
+docs/public/schemas/
+docs/public/examples/
+landing/public/brand/
+landing/src/generated/

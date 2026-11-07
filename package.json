@@ -1,0 +1,28 @@
+{
+  "name": "minuspod-site",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "docs",
+    "landing"
+  ],
+  "engines": {
+    "node": ">=22.23.4"
+  },
+  "scripts": {
+    "fetch:main": "bash scripts/fetch-main.sh",
+    "prepare:tokens": "node scripts/prepare-tokens.mjs",
+    "prepare:docs": "node scripts/prepare-docs.mjs",
+    "prepare:landing": "node scripts/prepare-landing.mjs",
+    "generate": "npm run prepare:tokens && npm run prepare:docs && npm run prepare:landing",
+    "build": "npm run generate && npm run build -ws",
+    "check": "node scripts/check-dist.mjs docs/dist landing/dist",
+    "test": "vitest run",
+    "deploy:docs": "npm run build -w docs && wrangler deploy --config docs/wrangler.jsonc",
+    "deploy:landing": "npm run build -w landing && wrangler deploy --config landing/wrangler.jsonc"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0",
+    "wrangler": "^4.158.0"
+  }
+}
