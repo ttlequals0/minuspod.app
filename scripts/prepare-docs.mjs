@@ -87,6 +87,23 @@ export function transformMarkdown(src, fromRel, videos = []) {
     if (j >= 0 && isRule(j)) drop.add(j);
   }
 
+  const isHeading = (i) => !fenced[i] && /^#{1,6}\s/.test(lines[i]);
+  const isTocItem = (l) => {
+    if (!/^\s*[-*]\s/.test(l)) return false;
+    const targets = [...l.matchAll(/\]\(([^)]*)\)/g)].map((m) => m[1]);
+    return targets.length > 0 && targets.every((t) => t.startsWith('#'));
+  };
+  lines.forEach((l, i) => {
+    if (fenced[i] || !/^##\s+Contents\s*$/.test(l) || drop.has(i)) return;
+    let end = i + 1;
+    while (end < lines.length && !isHeading(end) && (!lines[end].trim() || (!fenced[end] && isTocItem(lines[end])))) end++;
+    const span = Array.from({ length: end - i - 1 }, (_, k) => i + 1 + k);
+    if (span.some((j) => lines[j].trim())) {
+      drop.add(i);
+      span.forEach((j) => drop.add(j));
+    }
+  });
+
   const keptLines = lines.flatMap((l, i) => (drop.has(i) ? [] : [i]));
   const bodyLines = keptLines.map((i) => lines[i]);
   const bodyFenced = keptLines.map((i) => fenced[i]);

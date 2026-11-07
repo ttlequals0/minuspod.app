@@ -102,3 +102,26 @@ test('rewrites every srcset candidate and keeps descriptors', () => {
   const { body } = transformMarkdown('# H\n\n<img srcset="images/a.svg 1x, images/b.svg 2x">\n', 'x.md');
   expect(body).toContain('srcset="/images/a.svg 1x, /images/b.svg 2x"');
 });
+
+test('drops a Contents section made only of same-page links', () => {
+  const src = '# T\n\nIntro.\n\n## Contents\n\n- [x](#x)\n- [y](#y)\n- [z](#z)\n\n## Next\n\nBody.\n';
+  const { body } = transformMarkdown(src, 'installation.md');
+  expect(body).not.toContain('Contents');
+  expect(body).not.toContain('(#x)');
+  expect(body).toContain('## Next');
+});
+
+test('keeps a Contents section that opens with other content', () => {
+  const src = '# T\n\nIntro.\n\n## Contents\n\nSee below.\n\n- [x](#x)\n\n## Next\n\nBody.\n';
+  const { body } = transformMarkdown(src, 'installation.md');
+  expect(body).toContain('## Contents');
+  expect(body).toContain('See below.');
+  expect(body).toContain('(#x)');
+});
+
+test('drops the link list but keeps prose that follows it', () => {
+  const src = '# T\n\n## Contents\n\n- [x](#x)\n\nIntro prose.\n\n## Next\n';
+  const { body } = transformMarkdown(src, 'installation.md');
+  expect(body).not.toContain('Contents');
+  expect(body).toContain('Intro prose.');
+});

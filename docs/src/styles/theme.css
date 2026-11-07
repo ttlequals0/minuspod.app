@@ -3,6 +3,7 @@
 :root {
   --sl-color-accent: hsl(var(--primary));
   --sl-color-accent-high: hsl(var(--primary-on-tint));
+  --sl-color-text-invert: hsl(var(--primary-foreground));
   --sl-color-accent-low: hsl(var(--primary) / 0.15);
   --sl-color-bg: hsl(var(--background));
   --sl-color-bg-nav: hsl(var(--card));
