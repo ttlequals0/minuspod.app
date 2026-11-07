@@ -26,8 +26,7 @@
 }
 
 /* Code blocks take their own surface per mode so syntax colors stay above 4.5:1. */
-html:root[data-theme="light"] .expressive-code,
-html:root[data-theme="dark"] .expressive-code {
+html:root[data-theme] .expressive-code {
   --ec-codeBg: var(--code-bg);
   --ec-frm-edBg: var(--code-bg);
   --ec-frm-trmBg: var(--code-bg);
