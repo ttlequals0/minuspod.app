@@ -1,0 +1,15 @@
+@import "../../../shared/generated/tokens.css";
+
+:root {
+  --sl-color-accent: hsl(var(--primary));
+  --sl-color-accent-high: hsl(var(--primary-on-tint));
+  --sl-color-accent-low: hsl(var(--primary) / 0.15);
+  --sl-color-bg: hsl(var(--background));
+  --sl-color-bg-nav: hsl(var(--card));
+  --sl-color-bg-sidebar: hsl(var(--card));
+  --sl-color-text: hsl(var(--foreground));
+  --sl-color-text-accent: hsl(var(--primary));
+  --sl-color-hairline: hsl(var(--border));
+  --sl-color-hairline-light: hsl(var(--border));
+  --sl-font: "Roboto", ui-sans-serif, system-ui, sans-serif;
+}
