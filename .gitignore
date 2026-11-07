@@ -44,3 +44,6 @@ docs/public/schemas/
 docs/public/examples/
 landing/public/brand/
 landing/src/generated/
+
+# Browser tooling
+.playwright-mcp/
