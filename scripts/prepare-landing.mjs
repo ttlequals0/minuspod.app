@@ -1,35 +1,36 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { closeSync, copyFileSync, existsSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { mainDir } from './lib/main-dir.mjs';
+import { resolve } from 'node:path';
+import { isMain, resetDir } from './lib/cli.mjs';
+import { mainDir, repoRoot } from './lib/main-dir.mjs';
 import { parseVideoTable } from './lib/videos.mjs';
 import { stripMarkdown } from './lib/md.mjs';
-
-export { parseVideoTable };
 
 const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 const humanize = (t) => cap(t.replace(/-/g, ' '));
 
 export function groupScreenshots(files) {
   const groups = new Map();
-  for (const f of files) {
+  for (const f of [...files].sort()) {
     const m = /^(.+?)-(desktop|mobile)(?:-(.+))?\.png$/.exec(f);
     const base = m ? (m[3] ? `${m[1]}-${m[3]}` : m[1]) : f.replace(/\.png$/, '');
     if (!groups.has(base)) {
       const label = m?.[3] ? `${humanize(m[1])} (${cap(m[3])} theme)` : humanize(base);
-      groups.set(base, { base, label, desktop: null, mobile: null, single: null });
+      groups.set(base, { label, files: [] });
     }
-    groups.get(base)[m ? m[2] : 'single'] = f;
+    groups.get(base).files.push({ file: f, kind: m ? m[2] : 'single' });
   }
-  return [...groups.values()].sort((a, b) => (a.base < b.base ? -1 : a.base > b.base ? 1 : 0));
+  return [...groups.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, g]) => g);
 }
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 export function pngSize(path) {
-  const b = readFileSync(path);
-  if (b.length < 24 || !b.subarray(0, 8).equals(PNG_SIGNATURE)) throw new Error(`${path} is not a PNG file`);
+  const b = Buffer.alloc(24);
+  const fd = openSync(path, 'r');
+  const n = readSync(fd, b, 0, 24, 0);
+  closeSync(fd);
+  if (n < 24 || !b.subarray(0, 8).equals(PNG_SIGNATURE)) throw new Error(`${path} is not a PNG file`);
   return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
 }
 
@@ -49,15 +50,10 @@ function poster(mp4, jpg) {
   return true;
 }
 
-if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
-  const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+if (isMain(import.meta.url)) {
+  const root = repoRoot;
   const main = mainDir();
-  const out = (p) => {
-    const d = resolve(root, 'landing', p);
-    rmSync(d, { recursive: true, force: true });
-    mkdirSync(d, { recursive: true });
-    return d;
-  };
+  const out = (p) => resetDir(resolve(root, 'landing', p));
   // Posters are cached outside the emptied output dir so a rerun skips ffmpeg.
   const posterCache = resolve(root, 'node_modules/.cache/minuspod-posters');
   mkdirSync(posterCache, { recursive: true });
@@ -80,11 +76,10 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
 
   const shots = readdirSync(`${main}/docs/screenshots`).filter((f) => f.endsWith('.png'));
   for (const f of shots) copyFileSync(`${main}/docs/screenshots/${f}`, `${shotsOut}/${f}`);
-  const groups = groupScreenshots(shots).map((g) => {
-    const sizes = {};
-    for (const f of [g.desktop, g.mobile, g.single]) if (f) sizes[f] = pngSize(`${shotsOut}/${f}`);
-    return { ...g, sizes };
-  });
+  const groups = groupScreenshots(shots).map((g) => ({
+    label: g.label,
+    files: g.files.map((f) => ({ ...f, ...pngSize(`${shotsOut}/${f.file}`) })),
+  }));
   for (const f of BRAND) copyFileSync(`${main}/frontend/public/${f}`, `${brandOut}/${f}`);
 
   const rows = parseVideoTable(readFileSync(`${videosSrc}/README.md`, 'utf8'));

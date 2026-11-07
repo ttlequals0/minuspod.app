@@ -12,7 +12,7 @@ import screenshots from '../generated/screenshots.json';
   <Tabs>
     <div slot="videos" class="video-grid">
       {videos.map((v) => (
-        <VideoCard name={v.name} title={v.title} seconds={v.seconds} description={v.description} headingLevel={3} />
+        <VideoCard name={v.name} title={v.title} seconds={v.seconds} description={v.description} />
       ))}
     </div>
     <ScreenshotGrid slot="screenshots" groups={screenshots} />

@@ -174,7 +174,8 @@ h2 {
   margin-top: 4rem;
 }
 
-.video-card {
+.video-card,
+.shot {
   margin: 0;
   background: hsl(var(--card));
   color: hsl(var(--card-foreground));
@@ -292,15 +293,6 @@ figcaption .length {
 .shots {
   display: grid;
   gap: 1.5rem;
-}
-
-.shot {
-  margin: 0;
-  background: hsl(var(--card));
-  color: hsl(var(--card-foreground));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  overflow: hidden;
 }
 
 .shot-images {

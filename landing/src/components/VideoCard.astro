@@ -4,18 +4,16 @@ interface Props {
   title: string;
   seconds: number;
   description?: string;
-  headingLevel?: 2 | 3 | 4;
 }
 
-const { name, title, seconds, description, headingLevel = 3 } = Astro.props;
-const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
+const { name, title, seconds, description } = Astro.props;
 const min = Math.floor(seconds / 60);
 const sec = seconds % 60;
 const length = min ? `${min} min ${sec} s` : `${sec} s`;
 const base = `/videos/minuspod-${name}`;
 ---
 
-<figure class="video-card" data-video-card data-landscape={`${base}-landscape.mp4`} data-portrait={`${base}.mp4`}>
+<figure class="video-card" data-video-card data-portrait={`${base}.mp4`}>
   <div class="frame">
     <picture>
       <source srcset={`/videos/${name}-portrait.jpg`} media="(max-width: 767px)" />
@@ -26,7 +24,7 @@ const base = `/videos/minuspod-${name}`;
     </a>
   </div>
   <figcaption>
-    <Heading>{title}</Heading>
+    <h3>{title}</h3>
     {description && <p>{description}</p>}
     <p class="length">{length}</p>
   </figcaption>
@@ -34,19 +32,20 @@ const base = `/videos/minuspod-${name}`;
 
 <script>
   for (const card of document.querySelectorAll<HTMLElement>('[data-video-card]')) {
-    card.querySelector('.play')?.addEventListener('click', (e) => {
+    const play = card.querySelector<HTMLAnchorElement>('.play');
+    play?.addEventListener('click', (e) => {
       e.preventDefault();
       const video = document.createElement('video');
       video.controls = true;
       video.playsInline = true;
       video.preload = 'none';
-      for (const [src, media] of [[card.dataset.landscape, '(min-width: 768px)'], [card.dataset.portrait, '']]) {
+      for (const [src, media] of [[play.href, '(min-width: 768px)'], [card.dataset.portrait, '']]) {
         const source = document.createElement('source');
         source.src = src ?? '';
         if (media) source.media = media;
         video.append(source);
       }
-      video.setAttribute('aria-label', card.querySelector('h2, h3, h4')?.textContent ?? '');
+      video.setAttribute('aria-label', card.querySelector('h3')?.textContent ?? '');
       card.querySelector('.frame')?.replaceChildren(video);
       video.focus();
       video.play().catch(() => {});

@@ -5,12 +5,11 @@ import '../styles/site.css';
 interface Props {
   title: string;
   description: string;
+  noindex?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, noindex = false } = Astro.props;
 const path = Astro.url.pathname;
-const notFound = path.startsWith('/404');
-const canonical = notFound ? null : new URL(path, Astro.site).href;
 const image = new URL('/videos/demo-landscape.jpg', Astro.site).href;
 const token = import.meta.env.PUBLIC_CF_BEACON_TOKEN_LANDING;
 const nav = [
@@ -28,7 +27,7 @@ const nav = [
     <meta name="color-scheme" content="light dark" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    {canonical ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={new URL(path, Astro.site).href} />}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />

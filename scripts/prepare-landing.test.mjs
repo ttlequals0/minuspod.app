@@ -2,7 +2,8 @@ import { test, expect } from 'vitest';
 import { mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { parseVideoTable, extractPitch, groupScreenshots, pngSize, posterStale } from './prepare-landing.mjs';
+import { extractPitch, groupScreenshots, pngSize, posterStale } from './prepare-landing.mjs';
+import { parseVideoTable } from './lib/videos.mjs';
 import { mainDir } from './lib/main-dir.mjs';
 
 const readme = readFileSync(`${mainDir()}/docs/videos/README.md`, 'utf8');
@@ -24,10 +25,10 @@ test('extracts the pitch paragraph', () => {
 test('pairs desktop and mobile screenshots and labels them', () => {
   const groups = groupScreenshots(['ad-editor-desktop.png', 'ad-editor-mobile.png', 'dashboard-desktop-nord.png', 'dashboard-mobile-nord.png', 'dashboard-themes.png', 'podcasting-2.0-validator.png']);
   expect(groups).toEqual([
-    { base: 'ad-editor', label: 'Ad editor', desktop: 'ad-editor-desktop.png', mobile: 'ad-editor-mobile.png', single: null },
-    { base: 'dashboard-nord', label: 'Dashboard (Nord theme)', desktop: 'dashboard-desktop-nord.png', mobile: 'dashboard-mobile-nord.png', single: null },
-    { base: 'dashboard-themes', label: 'Dashboard themes', desktop: null, mobile: null, single: 'dashboard-themes.png' },
-    { base: 'podcasting-2.0-validator', label: 'Podcasting 2.0 validator', desktop: null, mobile: null, single: 'podcasting-2.0-validator.png' },
+    { label: 'Ad editor', files: [{ file: 'ad-editor-desktop.png', kind: 'desktop' }, { file: 'ad-editor-mobile.png', kind: 'mobile' }] },
+    { label: 'Dashboard (Nord theme)', files: [{ file: 'dashboard-desktop-nord.png', kind: 'desktop' }, { file: 'dashboard-mobile-nord.png', kind: 'mobile' }] },
+    { label: 'Dashboard themes', files: [{ file: 'dashboard-themes.png', kind: 'single' }] },
+    { label: 'Podcasting 2.0 validator', files: [{ file: 'podcasting-2.0-validator.png', kind: 'single' }] },
   ]);
 });
 
