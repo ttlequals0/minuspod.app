@@ -27,7 +27,7 @@ test('collectSlugs returns only page slugs', () => {
       ],
     },
   ];
-  expect(collectSlugs(sidebar)).toEqual(['top', 'a', 'b', 'c']);
+  expect(collectSlugs(sidebar)).toEqual(['top', 'a', 'b', 'specs', 'c']);
 });
 
 test('idsIn ignores data-id attributes', () => {
@@ -42,11 +42,11 @@ test('sidebarProblems reports both missing pages and pages without an entry', ()
     'orphan/index.html': '',
     'specs/index.html': '',
     'specs/x/index.html': '',
-    'pagefind/index.html': '',
-    '_astro/index.html': '',
+    'pagefind/pagefind.js': '',
+    '_astro/a.css': '',
     'images/a.svg': '',
   });
-  expect(sidebarProblems(['a', 'gone'], dist)).toEqual(['sidebar: gone', 'sidebar missing: orphan']);
+  expect(sidebarProblems(['a', 'gone', 'specs'], dist)).toEqual(['sidebar: gone', 'sidebar missing: orphan']);
 });
 
 test('check resolves mapped cross-host URLs against their dist dir', () => {

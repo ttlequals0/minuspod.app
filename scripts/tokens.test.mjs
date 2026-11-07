@@ -12,7 +12,7 @@ test('extracts root and dark declarations', () => {
 test('renders three selectors', () => {
   const out = renderTokensCss(extractTokens(css));
   expect(out).toContain(':root {');
-  expect(out).toContain(':root[data-theme="dark"], .dark {');
+  expect(out).toContain(':root[data-theme="dark"] {');
   expect(out).toContain('@media (prefers-color-scheme: dark)');
   expect(out).toContain('--background: 213 10% 17%');
 });
@@ -36,12 +36,6 @@ const themesTs = `export const THEMES = [
       ...darkStatus,
     },
   },
-  {
-    id: 'beta',
-    label: 'Beta',
-    light: null,
-    dark: { background: '0 0% 0%' },
-  },
 ]`;
 
 test('extractThemePair returns literal entries and skips spreads', () => {
@@ -49,10 +43,6 @@ test('extractThemePair returns literal entries and skips spreads', () => {
     light: { background: '1 2% 3%', 'card-foreground': '4 5% 6%', ring: '7 8% 9%' },
     dark: { background: '10 11% 12%' },
   });
-});
-
-test('extractThemePair throws for a one-mode theme', () => {
-  expect(() => extractThemePair(themesTs, 'beta')).toThrow(/beta.*light/);
 });
 
 test('extractThemePair throws for an unknown id', () => {
@@ -71,9 +61,10 @@ test('extractTokens ignores declarations inside comments', () => {
   expect(extractTokens(commented)).toEqual({ light: { background: '1 1% 1%' }, dark: { background: '2 2% 2%' } });
 });
 
-test('extractThemePair throws for a theme without a dark mode', () => {
-  const ts = `[{\n  id: 'gamma',\n  light: {\n    background: '1 1% 1%',\n  },\n  dark: null,\n}]`;
-  expect(() => extractThemePair(ts, 'gamma')).toThrow(/gamma.*dark/);
+test.each(['light', 'dark'])('extractThemePair throws for a theme without a %s mode', (mode) => {
+  const other = mode === 'light' ? 'dark' : 'light';
+  const ts = `[{\n  id: 'gamma',\n  ${mode}: null,\n  ${other}: {\n    background: '1 1% 1%',\n  },\n}]`;
+  expect(() => extractThemePair(ts, 'gamma')).toThrow(new RegExp(`gamma.*${mode}`));
 });
 
 test('extractThemePair accepts hyphens only in quoted keys', () => {

@@ -1,22 +1,14 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { mainDir } from './lib/main-dir.mjs';
+import { resolve } from 'node:path';
+import { isMain } from './lib/cli.mjs';
+import { mainDir, repoRoot } from './lib/main-dir.mjs';
 
-export const SITE_THEME = 'nord';
+const SITE_THEME = 'nord';
 
 function extractBlock(css, anchor) {
   const start = css.indexOf(anchor);
   if (start === -1) throw new Error(`Anchor "${anchor}" not found in index.css`);
-  let depth = 1;
-  let i = start + anchor.length;
-  const bodyStart = i;
-  for (; i < css.length && depth > 0; i++) {
-    if (css[i] === '{') depth++;
-    else if (css[i] === '}') depth--;
-  }
-  if (depth !== 0) throw new Error(`Unclosed block for anchor "${anchor}"`);
-  const body = css.slice(bodyStart, i - 1);
+  const body = braceBody(css, start + anchor.length - 1);
   const out = {};
   for (const m of body.matchAll(/--([\w-]+)\s*:\s*([^;]+);/g)) out[m[1]] = m[2].trim();
   return out;
@@ -34,7 +26,7 @@ function braceBody(text, openIdx) {
     if (text[i] === '{') depth++;
     else if (text[i] === '}') depth--;
   }
-  if (depth !== 0) throw new Error('Unclosed block in themes.ts');
+  if (depth !== 0) throw new Error('Unclosed block');
   return text.slice(openIdx + 1, i - 1);
 }
 
@@ -67,7 +59,7 @@ export function renderTokensCss({ light, dark }) {
 :root {
 ${decls(light, '  ')}
 }
-:root[data-theme="dark"], .dark {
+:root[data-theme="dark"] {
 ${decls(dark, '  ')}
 }
 @media (prefers-color-scheme: dark) {
@@ -78,11 +70,11 @@ ${decls(dark, '    ')}
 `;
 }
 
-if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
-  const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-  const css = readFileSync(`${mainDir()}/frontend/src/index.css`, 'utf8');
-  const themes = readFileSync(`${mainDir()}/frontend/src/themes/themes.ts`, 'utf8');
-  const outDir = resolve(root, 'shared/generated');
+if (isMain(import.meta.url)) {
+  const main = mainDir();
+  const css = readFileSync(`${main}/frontend/src/index.css`, 'utf8');
+  const themes = readFileSync(`${main}/frontend/src/themes/themes.ts`, 'utf8');
+  const outDir = resolve(repoRoot, 'shared/generated');
   mkdirSync(outDir, { recursive: true });
   writeFileSync(resolve(outDir, 'tokens.css'), renderTokensCss(applyTheme(extractTokens(css), extractThemePair(themes, SITE_THEME))));
 }

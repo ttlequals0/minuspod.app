@@ -1,7 +1,8 @@
 export const LINK_RE = /(!?)\[((?:[^\[\]]|\[[^\]]*\])*)\]\(([^)\s]+)(\s+"[^"]*")?\)/g;
 
-export const linkText = (s) =>
-  s.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(LINK_RE, (_, bang, text) => (bang ? '' : text));
+export const ATTR_RE = /\b(href|src|srcset|poster)="([^"]*)"/g;
+
+export const linkText = (s) => s.replace(LINK_RE, (_, bang, text) => (bang ? '' : text));
 
 // Code spans are lifted out first so their underscores and asterisks survive.
 export function stripMarkdown(s) {
@@ -13,14 +14,12 @@ export function stripMarkdown(s) {
   return plain.replace(/\u0000(\d+)\u0000/g, (_, i) => spans[i]).trim();
 }
 
-export function mapSrcset(value, fn) {
-  return value
-    .split(',')
-    .map((c) => c.trim())
-    .filter(Boolean)
-    .map((c) => c.replace(/^\S+/, (url) => fn(url)))
-    .join(', ');
-}
+const splitSrcset = (value) => value.split(',').map((c) => c.trim()).filter(Boolean);
+
+export const srcsetUrls = (value) => splitSrcset(value).map((c) => c.split(/\s+/)[0]);
+
+export const mapSrcset = (value, fn) =>
+  splitSrcset(value).map((c) => c.replace(/^\S+/, (url) => fn(url))).join(', ');
 
 export const headingSlug = (text) =>
   stripMarkdown(text).toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');

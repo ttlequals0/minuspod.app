@@ -1,5 +1,5 @@
 import { posix } from 'node:path';
-import { linkText } from './md.mjs';
+import { LINK_RE, linkText } from './md.mjs';
 
 const cells = (line) => line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
 
@@ -26,8 +26,8 @@ export function parseEmbedTable(readme) {
   if (at === -1) return [];
   return tableRows(lines.slice(at + 1)).map((row) => {
     const targets = [];
-    for (const m of row[1].matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
-      const [path, fragment] = m[1].split('#');
+    for (const m of row[1].matchAll(LINK_RE)) {
+      const [path, fragment] = m[3].split('#');
       const file = posix.normalize(posix.join('videos', path));
       if (file.startsWith('..')) continue;
       targets.push({ file, fragment: fragment || null });
