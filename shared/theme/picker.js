@@ -8,6 +8,8 @@ export function initThemePicker(root) {
   const choice = readTheme(pairIds);
   pairSel.value = choice.pair;
   modeSel.value = choice.mode;
+  document.documentElement.dataset.pair = choice.pair;
+  document.documentElement.dataset.themeMode = choice.mode;
 
   const dark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
   const current = () => ({ pair: pairSel.value, mode: modeSel.value });
@@ -28,6 +30,7 @@ export function initThemePicker(root) {
   });
   modeSel.addEventListener('change', () => {
     const resolved = resolveMode(modeSel.value, dark());
+    document.documentElement.dataset.themeMode = modeSel.value;
     document.documentElement.dataset.theme = resolved;
     document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', resolved);
     emit();

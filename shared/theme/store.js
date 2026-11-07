@@ -37,5 +37,7 @@ export function readTheme(pairIds) {
 export function writeTheme(choice) {
   try {
     document.cookie = serializeThemeCookie(choice, location.hostname);
-  } catch {}
+  } catch {
+    // cookies blocked: choice just does not persist
+  }
 }

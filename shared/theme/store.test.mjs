@@ -41,7 +41,7 @@ describe('resolveMode', () => {
 
 describe('bootstrap', () => {
   it('uses the configured cookie name', () => {
-    const src = readFileSync('shared/theme/bootstrap.js', 'utf8');
+    const src = readFileSync(new URL('./bootstrap.js', import.meta.url), 'utf8');
     expect(src).toContain(`'${COOKIE_NAME}='`);
     expect(src).not.toContain('import ');
   });
