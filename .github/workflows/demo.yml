@@ -1,0 +1,84 @@
+name: Demo
+
+on:
+  repository_dispatch:
+    types: [demo-updated, snapshot-published]
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    paths:
+      - demo/**
+      - scripts/demo-pipeline.sh
+      - .github/workflows/demo.yml
+  workflow_dispatch:
+    inputs:
+      main_ref:
+        description: MinusPod ref to build from
+        default: main
+      transcript_window:
+        description: Transcript window passed to the pipeline (optional)
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-deploy
+  cancel-in-progress: true
+
+jobs:
+  demo:
+    if: github.event_name != 'release' || startsWith(github.event.release.tag_name, 'snapshot-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: ttlequals0/MinusPod
+          ref: ${{ github.event.client_payload.ref || inputs.main_ref || vars.MAIN_REF || 'main' }}
+          path: .main
+          fetch-depth: 1
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - name: Download the latest snapshot release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="$(gh release list --repo ttlequals0/minuspod.app --limit 100 --json tagName \
+            --jq '[.[] | select(.tagName | startswith("snapshot-"))][0].tagName')"
+          [ -n "$tag" ] || { echo "no snapshot-* release found" >&2; exit 1; }
+          echo "snapshot release: $tag"
+          gh release download "$tag" --repo ttlequals0/minuspod.app --dir snapshot
+          ls snapshot
+      - run: docker pull ttlequals0/minuspod:cpu
+      - name: Run the demo pipeline
+        env:
+          DEMO_LEAK_HOSTS: ${{ secrets.DEMO_LEAK_HOSTS }}
+          CF_BEACON_TOKEN_DEMO: ${{ vars.CF_BEACON_TOKEN_DEMO || secrets.CF_BEACON_TOKEN_DEMO }}
+          TRANSCRIPT_WINDOW: ${{ inputs.transcript_window }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          db=(snapshot/demo-snapshot-*.db)
+          [ "${#db[@]}" -eq 1 ] || { echo "expected one demo-snapshot-*.db asset, found ${#db[@]}" >&2; exit 1; }
+          export SNAPSHOT_DB="$PWD/${db[0]}"
+          export ARTWORK_TAR="$PWD/snapshot/artwork.tar"
+          export OVERRIDES_TAR="$PWD/snapshot/overrides.tar"
+          bash scripts/demo-pipeline.sh .main work
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: demo-crawl-report
+          path: |
+            work/fixtures/index.json
+            work/crawl/routes-visited.json
+          if-no-files-found: ignore
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: demo
+          command: deploy --config wrangler.jsonc
