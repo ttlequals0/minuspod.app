@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { check, collectSlugs, idsIn, sidebarProblems } from './check-dist.mjs';
+import { agentProblems, check, collectSlugs, idsIn, pagePath, sidebarProblems, workerFirstProblems } from './check-dist.mjs';
 
 function tree(files) {
   const root = mkdtempSync(join(tmpdir(), 'dist-'));
@@ -96,4 +96,92 @@ test('sidebarProblems reports a missing dist dir', () => {
 test('check resolves a trailing-slash URL to a flat html file', () => {
   const docs = tree({ '404.html': '<link rel="canonical" href="https://docs.minuspod.app/404/">' });
   expect(check(docs, new Map([['https://docs.minuspod.app', docs]]))).toEqual([]);
+});
+
+test('pagePath maps built files to the URL they answer to', () => {
+  expect(pagePath('/d', '/d/index.html')).toBe('/');
+  expect(pagePath('/d', '/d/gallery/index.html')).toBe('/gallery/');
+  expect(pagePath('/d', '/d/specs/demo/index.html')).toBe('/specs/demo/');
+  expect(pagePath('/d', '/d/flat.html')).toBe('/flat/');
+});
+
+const CATALOG = JSON.stringify({
+  linkset: [{ anchor: 'https://docs.example/api/', 'service-desc': [{ href: 'https://docs.example/openapi.yaml' }], 'service-doc': [{ href: 'https://docs.example/api/' }] }],
+});
+const HEADERS = '/.well-known/api-catalog\n  Content-Type: application/linkset+json\n';
+const SITEMAP = '<urlset><url><loc>https://site.example/</loc></url><url><loc>https://site.example/gallery/</loc></url></urlset>';
+const WRANGLER = '{\n  // comment with a "quote" and https://x.example/\n  "assets": { "run_worker_first": ["/*", "!/_astro/*", "!/*.txt", "!/videos/*.jpg"] }\n}\n';
+// the dist sits next to its wrangler.jsonc, as in the repo
+const site = (extra = {}) =>
+  join(
+    tree(
+      Object.fromEntries(
+        Object.entries({
+          'dist/index.html': '',
+          'dist/gallery/index.html': '',
+          'dist/404.html': '',
+          'dist/index.md': '',
+          'dist/gallery.md': '',
+          'dist/robots.txt': 'User-agent: *\nContent-Signal: search=yes\n\nSitemap: https://site.example/sitemap.xml\n',
+          'dist/sitemap.xml': SITEMAP,
+          'dist/.well-known/api-catalog': CATALOG,
+          'dist/_headers': HEADERS,
+          'dist/_astro/a.css': '',
+          'dist/videos/a.jpg': '',
+          'wrangler.jsonc': WRANGLER,
+          ...extra,
+        }).filter(([, body]) => body !== null),
+      ),
+    ),
+    'dist',
+  );
+const docsDist = tree({ 'index.html': '', 'api/index.html': '', 'openapi.yaml': '' });
+const hosts = new Map([['https://docs.example', docsDist]]);
+
+test('agentProblems is clean for a complete site', () => {
+  expect(agentProblems(site(), 'https://site.example', hosts)).toEqual([]);
+  expect(agentProblems(site({ 'dist/sitemap-0.xml': SITEMAP }), 'https://site.example', hosts)).toEqual([]);
+});
+
+test('agentProblems reports each missing piece', () => {
+  const dist = site({
+    'dist/extra/index.html': '',
+    'dist/robots.txt': 'User-agent: *\n',
+    'dist/sitemap.xml': '<urlset><url><loc>https://site.example/</loc></url><url><loc>https://site.example/gone/</loc></url></urlset>',
+    'dist/sitemap-0.xml': SITEMAP,
+    'dist/.well-known/api-catalog': JSON.stringify({ linkset: [{ anchor: 'https://docs.example/nope/', 'service-doc': [{ href: '/x' }] }] }),
+    'dist/_headers': '/*\n  X: y\n',
+    'dist/videos/a.jpg': null,
+  });
+  expect(agentProblems(dist, 'https://site.example', hosts).sort()).toEqual([
+    'agent: _headers lacks the api-catalog Content-Type',
+    'agent: api-catalog entry lacks service-desc',
+    'agent: api-catalog href /x',
+    'agent: api-catalog href https://docs.example/nope/',
+    'agent: no markdown twin for /extra/',
+    'agent: robots.txt lacks Content-Signal',
+    'agent: robots.txt lacks the Sitemap line',
+    'agent: run_worker_first excludes nothing with !/videos/*.jpg',
+    'agent: sitemap-0.xml and sitemap.xml differ on https://site.example/gallery/',
+    'agent: sitemap-0.xml and sitemap.xml differ on https://site.example/gone/',
+    'agent: sitemap.xml lists https://site.example/gone/',
+    'agent: sitemap.xml missing /extra/',
+    'agent: sitemap.xml missing /gallery/',
+  ]);
+});
+
+test('agentProblems reports a missing dist and an empty linkset', () => {
+  expect(agentProblems('/nonexistent-dist-dir', 'https://site.example')).toEqual(['agent: /nonexistent-dist-dir missing']);
+  expect(agentProblems(site({ 'dist/.well-known/api-catalog': '{"linkset":[]}' }), 'https://site.example', hosts)).toEqual(['agent: api-catalog linkset is empty']);
+});
+
+test('workerFirstProblems flags exclusions that match nothing in the dist', () => {
+  const dist = tree({ 'index.html': '', 'robots.txt': '', 'images/a.svg': '', 'flat.txt': '' });
+  const config = join(dist, 'w.jsonc');
+  writeFileSync(config, '{ "assets": { "run_worker_first": ["/*", "!/images/*", "!/*.txt", "!/brand/*", "!/*.xml", "!/images/*.png", "!/odd"] } }');
+  expect(workerFirstProblems(dist, config)).toEqual([
+    'agent: run_worker_first excludes nothing with !/brand/*',
+    'agent: run_worker_first excludes nothing with !/*.xml',
+    'agent: run_worker_first excludes nothing with !/images/*.png',
+  ]);
 });

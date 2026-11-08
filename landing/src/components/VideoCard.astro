@@ -1,4 +1,6 @@
 ---
+import { formatLength, videoUrl } from '../lib/video';
+
 interface Props {
   name: string;
   title: string;
@@ -8,10 +10,7 @@ interface Props {
 }
 
 const { name, title, seconds, description, caption = true } = Astro.props;
-const min = Math.floor(seconds / 60);
-const sec = seconds % 60;
-const length = min ? `${min} min ${sec} s` : `${sec} s`;
-const base = `/videos/minuspod-${name}`;
+const length = formatLength(seconds);
 // without a caption the poster carries the text instead
 const alt = caption ? '' : [title, description, length].filter(Boolean).map((t) => t.replace(/\.$/, '')).join('. ');
 ---
@@ -22,7 +21,7 @@ const alt = caption ? '' : [title, description, length].filter(Boolean).map((t) 
       <source srcset={`/videos/${name}-portrait.jpg`} media="not all and (min-width: 768px)" />
       <img src={`/videos/${name}-landscape.jpg`} alt={alt} width="1920" height="1080" loading="lazy" />
     </picture>
-    <a class="play" href={`${base}-landscape.mp4`} aria-label={`Play ${title}`}>
+    <a class="play" href={videoUrl(name)} aria-label={`Play ${title}`}>
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
     </a>
   </div>

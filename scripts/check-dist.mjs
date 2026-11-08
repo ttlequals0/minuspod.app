@@ -1,9 +1,10 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { isMain } from './lib/cli.mjs';
 import { ATTR_RE, isExternalHref, srcsetUrls } from './lib/md.mjs';
+import { markdownPath } from '../shared/worker/agent.mjs';
 
 function walk(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -114,6 +115,76 @@ export function sidebarProblems(slugs, distDir) {
   ];
 }
 
+// the page URL path a built html file answers to, under auto-trailing-slash
+export function pagePath(root, file) {
+  const rel = relative(root, file).split(sep).join('/');
+  if (rel === 'index.html') return '/';
+  return `/${rel.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '/')}`;
+}
+
+// JSONC: drop comments outside strings
+const stripJsonc = (text) => text.replace(/("(?:\\.|[^"\\])*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g, (m, str) => str ?? '');
+
+const locsIn = (xml) => new Set([...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]));
+
+// every run_worker_first exclusion must still match something at the top of the dist
+export function workerFirstProblems(distDir, config) {
+  const root = resolve(distDir);
+  const top = readdirSync(root);
+  const problems = [];
+  for (const pattern of JSON.parse(stripJsonc(readFileSync(config, 'utf8'))).assets?.run_worker_first ?? []) {
+    const m = /^!\/(?:([^/*]+)\/)?\*(?:\.(\w+))?$/.exec(pattern);
+    if (!m) continue;
+    const [, dir, ext] = m;
+    const names = dir ? (isFile(join(root, dir)) || !existsSync(join(root, dir)) ? null : readdirSync(join(root, dir))) : top;
+    const hit = names && (!ext || names.some((n) => n.endsWith(`.${ext}`)));
+    if (!hit) problems.push(`agent: run_worker_first excludes nothing with ${pattern}`);
+  }
+  return problems;
+}
+
+// robots.txt, sitemap.xml, Markdown twins and the API catalog for one site at its origin
+export function agentProblems(distDir, origin, hosts = new Map()) {
+  const root = resolve(distDir);
+  if (!existsSync(root)) return [`agent: ${distDir} missing`];
+  const problems = [];
+  const read = (rel) => (isFile(join(root, rel)) ? readFileSync(join(root, rel), 'utf8') : null);
+  const robots = read('robots.txt') ?? '';
+  if (!robots.includes(`Sitemap: ${origin}/sitemap.xml`)) problems.push('agent: robots.txt lacks the Sitemap line');
+  if (!/^Content-Signal: /m.test(robots)) problems.push('agent: robots.txt lacks Content-Signal');
+
+  const pages = new Set(walk(root).filter((p) => !p.endsWith('404.html')).map((p) => pagePath(root, p)));
+  const locs = locsIn(read('sitemap.xml') ?? '');
+  for (const p of pages) {
+    if (!locs.has(origin + p)) problems.push(`agent: sitemap.xml missing ${p}`);
+    if (!isFile(join(root, markdownPath(p)))) problems.push(`agent: no markdown twin for ${p}`);
+  }
+  for (const loc of locs) if (!loc.startsWith(origin) || !pages.has(loc.slice(origin.length))) problems.push(`agent: sitemap.xml lists ${loc}`);
+  // Starlight writes its own sitemap-0.xml; the two must agree
+  const auto = read('sitemap-0.xml');
+  if (auto) for (const loc of locsIn(auto).symmetricDifference(locs)) problems.push(`agent: sitemap-0.xml and sitemap.xml differ on ${loc}`);
+
+  let catalog;
+  try {
+    catalog = JSON.parse(read('.well-known/api-catalog') ?? '');
+  } catch {
+    problems.push('agent: .well-known/api-catalog missing or not JSON');
+  }
+  if (catalog && !catalog.linkset?.length) problems.push('agent: api-catalog linkset is empty');
+  for (const entry of catalog?.linkset ?? []) {
+    for (const rel of ['service-desc', 'service-doc']) if (!entry[rel]?.[0]?.href) problems.push(`agent: api-catalog entry lacks ${rel}`);
+    const hrefs = [entry.anchor, ...['service-desc', 'service-doc'].flatMap((rel) => (entry[rel] ?? []).map((l) => l.href))];
+    for (const href of hrefs.filter(Boolean)) {
+      const located = locate(href, root, hosts);
+      if (located && !resolveTarget(located[0], join(root, 'index.html'), located[1])) problems.push(`agent: api-catalog href ${href}`);
+    }
+  }
+  if (!/^\/\.well-known\/api-catalog\n\s+Content-Type: application\/linkset\+json/m.test(read('_headers') ?? '')) problems.push('agent: _headers lacks the api-catalog Content-Type');
+  const config = join(root, '..', 'wrangler.jsonc');
+  if (isFile(config)) problems.push(...workerFirstProblems(root, config));
+  return problems;
+}
+
 async function main() {
   let positionals = [];
   let opts = {};
@@ -146,6 +217,7 @@ async function main() {
     process.exit(1);
   }
   const problems = dirs.flatMap((d) => check(d, hosts));
+  for (const [origin, dir] of hosts) problems.push(...agentProblems(dir, origin, hosts));
   if (opts.sidebar) {
     const { SIDEBAR } = await import(pathToFileURL(resolve(opts.sidebar)).href);
     problems.push(...sidebarProblems(collectSlugs(SIDEBAR), positionals[0]));

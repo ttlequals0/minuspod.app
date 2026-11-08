@@ -32,6 +32,20 @@ describe('parseRange', () => {
 });
 
 describe('worker', () => {
+  it('answers Accept: text/markdown with the twin and marks html pages', async () => {
+    const env = {
+      async fetch(req) {
+        const path = new URL(req.url).pathname;
+        if (path === '/index.md') return new Response('# MinusPod', { headers: { 'Content-Type': 'text/markdown' } });
+        return new Response('<html>', { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+      },
+    };
+    const md = await worker.fetch(new Request('https://minuspod.app/', { headers: { Accept: 'text/markdown' } }), { ASSETS: env });
+    expect(md.headers.get('Content-Type')).toBe('text/markdown; charset=utf-8');
+    const html = await worker.fetch(new Request('https://minuspod.app/'), { ASSETS: env });
+    expect(html.headers.has('Vary')).toBe(false);
+    expect(html.headers.get('Link')).toContain('rel="api-catalog"');
+  });
   it('serves the full file with Accept-Ranges when no range is asked', async () => {
     const res = await get();
     expect(res.status).toBe(200);

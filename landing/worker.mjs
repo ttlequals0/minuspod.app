@@ -1,6 +1,8 @@
 // Static assets answer Range requests with the whole file, which breaks video seeking.
 // run_worker_first routes the videos here so the requested byte range is served as a 206.
 // Asset misses on any path also land here, so everything else must pass through untouched.
+import { negotiate, pageHeaders } from '../shared/worker/agent.mjs';
+
 const RANGE = /^bytes=(?:(\d+)-(\d*)|-(\d+))$/;
 
 // null for a missing, malformed or reversed header (served as a plain GET); start >= size is unsatisfiable
@@ -16,6 +18,8 @@ export function parseRange(header, size) {
 
 export default {
   async fetch(request, env) {
+    const markdown = await negotiate(request, env);
+    if (markdown) return markdown;
     // the asset layer ignores Range but drops Cache-Control when it sees one
     const upstream = new Request(request);
     upstream.headers.delete('Range');
@@ -26,7 +30,7 @@ export default {
     const header = request.headers.get('Range');
     const ifRange = request.headers.get('If-Range');
     const whole = request.method !== 'GET' || res.status !== 200 || !header || (ifRange && ifRange !== res.headers.get('ETag'));
-    if (whole) return new Response(res.body, { status: res.status, headers });
+    if (whole) return pageHeaders(new Response(res.body, { status: res.status, headers }), new URL(request.url).pathname, request.headers.get('Accept'));
     // the asset response may not carry Content-Length, so size the body itself
     const body = await res.arrayBuffer();
     const range = parseRange(header, body.byteLength);
