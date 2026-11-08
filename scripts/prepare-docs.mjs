@@ -2,7 +2,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { dirname, join, posix } from 'node:path';
 import { isMain, resetDir } from './lib/cli.mjs';
 import { mainDir, repoRoot } from './lib/main-dir.mjs';
-import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, truncateWords } from './lib/md.mjs';
+import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, describeText } from './lib/md.mjs';
 import { videoIndex } from './lib/videos.mjs';
 import { apiPages } from './lib/openapi-md.mjs';
 import { parse as parseYaml } from 'yaml';
@@ -114,7 +114,7 @@ export function transformMarkdown(src, fromRel, videos = []) {
 
   const body = lines.flatMap((text, i) => (drop.has(i) ? [] : [{ text, fenced: fenced[i] }]));
 
-  const description = truncateWords(firstParagraph(body.map((l) => l.text), body.map((l) => l.fenced)), 160);
+  const description = describeText(firstParagraph(body.map((l) => l.text), body.map((l) => l.fenced)));
   const frontmatter = { title: h1?.text ?? '', description };
   const slug = pageKey(fromRel);
   if (slug) frontmatter.slug = slug;

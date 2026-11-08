@@ -1,6 +1,8 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import { existsSync, readFileSync } from 'node:fs';
 import { beaconToken } from '../shared/beacon.mjs';
+import { SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_URL, hasSocialImage } from '../shared/social.mjs';
 
 function beaconHead() {
   const token = beaconToken(process.env.PUBLIC_CF_BEACON_TOKEN_DOCS);
@@ -81,6 +83,18 @@ export const SIDEBAR = [
   },
 ];
 
+// Starlight sets twitter:card to summary_large_image without an image; the landing poster fills it
+// when prepare-landing produced the demo video (landing/src/generated/videos.json).
+function socialImageHead() {
+  const videosFile = new URL('../landing/src/generated/videos.json', import.meta.url);
+  if (!existsSync(videosFile) || !hasSocialImage(JSON.parse(readFileSync(videosFile, 'utf8')))) return [];
+  return [
+    { tag: 'meta', attrs: { property: 'og:image', content: SOCIAL_IMAGE_URL } },
+    { tag: 'meta', attrs: { property: 'og:image:alt', content: SOCIAL_IMAGE_ALT } },
+    { tag: 'meta', attrs: { name: 'twitter:image:alt', content: SOCIAL_IMAGE_ALT } },
+  ];
+}
+
 export default defineConfig({
   site: 'https://docs.minuspod.app',
   integrations: [
@@ -105,6 +119,7 @@ export default defineConfig({
         './src/styles/theme.css',
       ],
       head: [
+        ...socialImageHead(),
         ...beaconHead(),
       ],
       sidebar: SIDEBAR,

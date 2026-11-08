@@ -4,15 +4,32 @@ import Button from '../components/Button.astro';
 import VideoCard from '../components/VideoCard.astro';
 import videos from '../generated/videos.json';
 import { pitch } from '../generated/pitch.json';
+import { SOCIAL_IMAGE_PATH, hasSocialImage } from '../../../shared/social.mjs';
 
 const demo = videos.find((v) => v.name === 'demo');
 const description = pitch.split('. ')[0] + '.';
 const detail = pitch.slice(description.length).trim();
+const title = 'MinusPod: self-hosted ad removal for podcasts and YouTube';
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'MinusPod',
+  url: new URL('/', Astro.site).href,
+  description: pitch,
+  applicationCategory: 'MultimediaApplication',
+  operatingSystem: 'Linux, Docker',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  license: 'https://github.com/ttlequals0/MinusPod/blob/main/LICENSE',
+  codeRepository: 'https://github.com/ttlequals0/MinusPod',
+  softwareHelp: 'https://docs.minuspod.app/',
+  ...(hasSocialImage(videos) && { screenshot: new URL(SOCIAL_IMAGE_PATH, Astro.site).href }),
+};
 ---
 
-<Base title="MinusPod" description={description}>
+<Base title={title} description={description} jsonLd={jsonLd}>
   <section class="hero">
-    <h1 aria-label="MinusPod">
+    <h1>
+      <span class="sr-only">MinusPod</span>
       <img class="logo-light" src="/brand/logo.svg" alt="" width="520" height="160" aria-hidden="true" />
       <img class="logo-dark" src="/brand/logo-dark.svg" alt="" width="520" height="160" aria-hidden="true" />
     </h1>

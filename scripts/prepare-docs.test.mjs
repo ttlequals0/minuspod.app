@@ -178,3 +178,8 @@ test('renderPage writes sidebar and table of contents frontmatter when a page ca
   expect(out).toBe('---\ntitle: "T"\ndescription: "D"\nsidebar:\n  order: 2\n  label: "Two"\ntableOfContents:\n  minHeadingLevel: 2\n  maxHeadingLevel: 2\n---\n\nx\n');
   expect(renderPage({ frontmatter: { title: 'S', description: '' }, body: 'y' }, 'specs/index.md')).toContain('sidebar:\n  label: "Overview"\n  order: 0\n');
 });
+
+test('frontmatter skips a spec metadata paragraph', () => {
+  const src = '# Review Queue\n\nDate: 2026-07-12\nStatus: implemented in 2.44.0\n\nRejected detections wait in a review area.\n';
+  expect(transformMarkdown(src, 'specs/review-queue.md').frontmatter.description).toBe('Rejected detections wait in a review area.');
+});

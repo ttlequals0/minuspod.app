@@ -1,5 +1,5 @@
 // Starlight pages from an OpenAPI document: one page per tag, one for the component schemas, an index.
-import { fenceMask, firstParagraph, headingSlug, truncateWords } from './md.mjs';
+import { describeText, fenceMask, firstParagraph, headingSlug } from './md.mjs';
 
 const METHODS = ['get', 'post', 'put', 'patch', 'delete'];
 
@@ -117,7 +117,7 @@ export function operationMarkdown(spec, method, path, op) {
 
 const summary = (text) => {
   const lines = (text ?? '').split('\n');
-  return truncateWords(firstParagraph(lines, fenceMask(lines)), 160);
+  return describeText(firstParagraph(lines, fenceMask(lines)));
 };
 
 const page = (path, title, description, order, body, extra = {}) => ({

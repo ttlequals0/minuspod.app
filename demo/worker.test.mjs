@@ -127,3 +127,22 @@ test('a failed manifest load is retried on the next request', async () => {
   assert.equal((await get(e, '/show')).headers.get('Content-Type'), 'application/xml; charset=utf-8');
   assert.equal(indexCalls, 3);
 });
+
+test('unknown file-like paths answer 404 instead of the app shell', async () => {
+  const e = env(xml);
+  for (const path of ['/sitemap.xml', '/wp-login.php', '/missing.json']) {
+    const res = await get(e, path);
+    assert.equal(res.status, 404, path);
+    assert.equal(res.headers.get('X-Robots-Tag'), 'noindex, nofollow');
+    assert.match(res.headers.get('Content-Type'), /text\/plain/);
+  }
+  assert.equal((await get(e, '/sitemap.xml', 'HEAD')).body, null);
+  assert.equal((await get(e, '/unlisted.xml')).status, 404, 'an unlisted feed slug with .xml is a missing file, not an app route');
+});
+
+test('app routes and .html paths keep the SPA fallback', async () => {
+  const e = env(xml);
+  for (const path of ['/feeds/42', '/feeds/my.show', '/feeds/the.daily/episodes/x.y', '/settings', '/anything.html', '/v1.2']) {
+    assert.equal((await get(e, path)).status, 200, path);
+  }
+});
