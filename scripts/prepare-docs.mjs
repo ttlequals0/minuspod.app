@@ -195,6 +195,11 @@ if (isMain(import.meta.url)) {
     if (existsSync(join(docsDir, name))) cpSync(join(docsDir, name), dest, { recursive: true });
   }
 
+  // the app serves its spec with the running version; the docs copy carries the release it was built from
+  const version = /__version__ = "([^"]+)"/.exec(readFileSync(join(main, 'version.py'), 'utf8'))?.[1];
+  if (!version) throw new Error('prepare-docs: no __version__ in version.py');
+  writeFileSync(join(root, 'docs/public/openapi.yaml'), readFileSync(join(main, 'openapi.yaml'), 'utf8').replace(/^  version: .*$/m, `  version: ${version}`));
+
   const assets = join(root, 'docs/src/assets/generated');
   mkdirSync(assets, { recursive: true });
   for (const f of ['logo.svg', 'logo-dark.svg']) cpSync(join(main, 'frontend/public', f), join(assets, f));

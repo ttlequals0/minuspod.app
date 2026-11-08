@@ -14,6 +14,21 @@ Content comes from a checkout of the MinusPod main repo, which is never committe
 
 Both sites show the same theme list as the app. The choice is stored in a `minuspod-theme` cookie on the parent domain, so the landing page and the docs open in the same pair and mode.
 
+## Agent discovery
+
+Both sites publish the same machine-readable surface, and `npm run check` fails when any of it
+is missing:
+
+- `robots.txt` carries a Content-Signal line and points at `sitemap.xml`, which is built from
+  the page list. Starlight also writes its own `sitemap-index.xml`; the check fails if the two
+  disagree.
+- Every page has a Markdown twin. The Worker answers `Accept: text/markdown` on `/installation/`
+  with `/installation.md`. Answers to requests that mention `text/markdown` carry
+  `Vary: Accept`; browser responses do not, so prefetch caches can reuse them.
+- `/.well-known/api-catalog` points at the MinusPod OpenAPI spec (copied from the main repo to
+  `docs.minuspod.app/openapi.yaml` at build time) and the API docs page. Every page names these
+  and its twin in a `Link` header.
+
 ## Local loop
 
 1. `npm install`

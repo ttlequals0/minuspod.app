@@ -1,2 +1,9 @@
+# Content Signals (https://contentsignals.org): search=yes allows indexing and
+# linking to this site, ai-input=yes allows feeding pages to an AI model as
+# grounding for a user's request, ai-train=no withholds consent to use them for
+# training or fine-tuning a model. A missing signal grants or restricts nothing.
 User-agent: *
 Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+
+Sitemap: https://docs.minuspod.app/sitemap.xml
