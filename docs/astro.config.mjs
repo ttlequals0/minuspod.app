@@ -2,6 +2,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import { existsSync, readFileSync } from 'node:fs';
 import { beaconToken } from '../shared/beacon.mjs';
+import { presentPages } from '../shared/sidebar.mjs';
 import { SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_URL, hasSocialImage } from '../shared/social.mjs';
 
 function beaconHead() {
@@ -19,7 +20,10 @@ function beaconHead() {
   ];
 }
 
-export const SIDEBAR = [
+const CONTENT = new URL('./src/content/docs/', import.meta.url);
+const hasPage = (slug) => ['.md', '.mdx', '/index.md'].some((ext) => existsSync(new URL(slug + ext, CONTENT)));
+
+export const SIDEBAR = presentPages([
   {
     label: 'Get started',
     items: [
@@ -82,7 +86,7 @@ export const SIDEBAR = [
       { label: 'Design specs', items: [{ autogenerate: { directory: 'specs' } }] },
     ],
   },
-];
+], hasPage);
 
 // Starlight sets twitter:card to summary_large_image without an image; the landing poster fills it
 // when prepare-landing produced the demo video (landing/src/generated/videos.json).
