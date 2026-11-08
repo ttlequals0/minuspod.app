@@ -1,8 +1,9 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import { beaconToken } from '../shared/beacon.mjs';
 
 function beaconHead() {
-  const token = process.env.PUBLIC_CF_BEACON_TOKEN_DOCS;
+  const token = beaconToken(process.env.PUBLIC_CF_BEACON_TOKEN_DOCS);
   if (!token) return [];
   return [
     {

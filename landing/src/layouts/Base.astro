@@ -1,5 +1,6 @@
 ---
 import '../../../shared/generated/tokens.css';
+import { beaconToken } from '../../../shared/beacon.mjs';
 import '../styles/site.css';
 import bootstrap from '../../../shared/theme/bootstrap.js?raw';
 import ThemePicker from '../components/ThemePicker.astro';
@@ -14,7 +15,7 @@ interface Props {
 const { title, description, noindex = false } = Astro.props;
 const path = Astro.url.pathname;
 const image = videos.some((v) => v.name === 'demo') ? new URL('/videos/demo-landscape.jpg', Astro.site).href : null;
-const token = import.meta.env.PUBLIC_CF_BEACON_TOKEN_LANDING;
+const token = beaconToken(import.meta.env.PUBLIC_CF_BEACON_TOKEN_LANDING);
 const nav = [
   { label: 'Docs', href: 'https://docs.minuspod.app/' },
   { label: 'Gallery', href: '/gallery/' },
