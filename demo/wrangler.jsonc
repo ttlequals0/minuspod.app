@@ -1,0 +1,14 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "minuspod-demo",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-11-06",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // the Worker answers /api/ with JSON (a hard reload bypasses the mock service worker) and serves feed XML at /<slug>
+    "run_worker_first": ["/*", "!/assets/*", "!/demo/*", "!/feeds-xml/*"]
+  },
+  "routes": [{ "pattern": "demo.minuspod.app", "custom_domain": true }]
+}
