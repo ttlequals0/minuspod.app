@@ -23,6 +23,8 @@ export const markdownPath = (pathname) => `${pathname.replace(/\/+$/, '') || '/i
 
 export async function negotiate(request, env) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return null;
+  // a browser tab navigation always gets the page, whatever its Accept header says; agents fetch
+  if (request.headers.get('Sec-Fetch-Dest') === 'document') return null;
   if (!acceptsMarkdown(request.headers.get('Accept'))) return null;
   const url = new URL(request.url);
   url.pathname = markdownPath(url.pathname);
