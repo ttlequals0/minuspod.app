@@ -23,4 +23,4 @@ bash scripts/demo-pipeline.sh $HOME/repos/MinusPod /tmp/demo-work
 - The leak check exit code stops the script before the build. It also scans the live-mutated `$WORK/data/podcast.db`.
 - Each show's feed XML is dumped into `feeds-xml/` (with an `index.json` slug list) and the Worker serves it at `/<slug>`, also accepting `.xml` and `.rss`. The dump replaces every email address with `demo@example.invalid` and fails if a `DEMO_LEAK_HOSTS` host appears in any file.
 - Preview with the Worker (exercises the `/api` 503 path): `npx wrangler dev --config demo/wrangler.jsonc --port 8788`.
-- Preview: `npx --prefix $HOME/repos/MinusPod/frontend vite preview --outDir demo/dist --port 8788`.
+- Preview without the Worker (static files only): `npx --prefix $HOME/repos/MinusPod/frontend vite preview --outDir demo/dist --port 8788`.
