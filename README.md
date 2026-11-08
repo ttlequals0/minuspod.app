@@ -24,7 +24,8 @@ is missing:
   disagree.
 - Every page has a Markdown twin. The Worker answers `Accept: text/markdown` on `/installation/`
   with `/installation.md`. Answers to requests that mention `text/markdown` carry
-  `Vary: Accept`; browser responses do not, so prefetch caches can reuse them.
+  `Vary: Accept`; browser responses do not, so prefetch caches can reuse them. A tab navigation
+  (`Sec-Fetch-Dest: document`) always gets the HTML page, whatever its Accept header says.
 - `/.well-known/api-catalog` points at the MinusPod OpenAPI spec (copied from the main repo to
   `docs.minuspod.app/openapi.yaml` and `openapi.json` at build time) and the API docs page. Every
   page names these and its twin in a `Link` header.

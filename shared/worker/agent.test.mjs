@@ -55,6 +55,12 @@ describe('negotiate', () => {
     expect(await negotiate(req('/brand/logo.svg', 'text/markdown'), env)).toBeNull();
     expect(await negotiate(req('/missing/', 'text/markdown'), env)).toBeNull();
   });
+  it('never answers a browser tab navigation with Markdown', async () => {
+    const nav = new Request('http://x/', { headers: { Accept: 'text/markdown', 'Sec-Fetch-Dest': 'document' } });
+    expect(await negotiate(nav, env)).toBeNull();
+    const fetched = new Request('http://x/', { headers: { Accept: 'text/markdown', 'Sec-Fetch-Dest': 'empty' } });
+    expect((await negotiate(fetched, env)).status).toBe(200);
+  });
 });
 
 describe('pageHeaders', () => {
