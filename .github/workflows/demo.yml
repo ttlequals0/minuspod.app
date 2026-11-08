@@ -25,7 +25,7 @@ permissions:
 
 concurrency:
   group: demo-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   demo:
@@ -49,13 +49,17 @@ jobs:
         run: |
           tag="$(gh release list --repo ttlequals0/minuspod.app --limit 100 --json tagName \
             --jq '[.[] | select(.tagName | startswith("snapshot-"))][0].tagName')"
-          [ -n "$tag" ] || { echo "no snapshot-* release found" >&2; exit 1; }
+          [ -n "$tag" ] && [ "$tag" != null ] || { echo "no snapshot-* release found" >&2; exit 1; }
           echo "snapshot release: $tag"
           gh release download "$tag" --repo ttlequals0/minuspod.app --dir snapshot
           cd snapshot
           ls
+          for f in demo-snapshot-*.db artwork.tar overrides.tar; do
+            grep -q -- " $f\$" SHA256SUMS.txt || { echo "SHA256SUMS.txt has no entry for $f" >&2; exit 1; }
+          done
           sha256sum -c --ignore-missing SHA256SUMS.txt
-      - run: docker pull ttlequals0/minuspod:cpu
+      - name: Pull the app image
+        run: docker pull ttlequals0/minuspod:cpu
       - name: Run the demo pipeline
         env:
           DEMO_LEAK_HOSTS: ${{ secrets.DEMO_LEAK_HOSTS }}
@@ -78,8 +82,10 @@ jobs:
             work/fixtures/index.json
             work/crawl/routes-visited.json
           if-no-files-found: ignore
-      - run: npm ci --workspaces=false
-      - run: npx wrangler deploy --config demo/wrangler.jsonc
+      - name: Install wrangler
+        run: npm ci --workspaces=false
+      - name: Deploy the demo Worker
+        run: npx wrangler deploy --config demo/wrangler.jsonc
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
