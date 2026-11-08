@@ -102,10 +102,25 @@ node stage-artwork.mjs --from "$WORK/artwork" --to "$MAIN_DIR/frontend/demo/artw
 node check-coverage.mjs --api-dir "$MAIN_DIR/frontend/src/api" --fixtures "$WORK/fixtures"
 echo "::endgroup::"
 
+echo "::group::Feed XML"
+rm -rf "$WORK/feeds-xml"
+mkdir -p "$WORK/feeds-xml"
+slugs="$(curl -fsS "$BASE/api/v1/feeds?includeLatestEpisodes=false" \
+  | python3 -c "import json,sys; print('\n'.join(f['slug'] for f in json.load(sys.stdin)['feeds']))")"
+[ -n "$slugs" ] || { echo "no feeds returned for the feed XML step" >&2; exit 1; }
+count=0
+while IFS= read -r slug; do
+  status="$(curl -sS -o "$WORK/feeds-xml/$slug.xml" -w '%{http_code}' "$BASE/$slug")"
+  [ "$status" = 200 ] || { echo "feed XML for $slug returned HTTP $status" >&2; exit 1; }
+  count=$((count + 1))
+done <<< "$slugs"
+echo "feed XML files: $count"
+echo "::endgroup::"
+
 echo "::group::Leak check"
 cd "$MAIN_DIR"
 PYTHONPATH=src:. python3 scripts/demo/leak_check.py --hosts "$DEMO_LEAK_HOSTS" \
-  --sqlite "$WORK/data/podcast.db" "$WORK/fixtures" "$MAIN_DIR/frontend/demo/artwork" "$WORK/search-index.json"
+  --sqlite "$WORK/data/podcast.db" "$WORK/fixtures" "$MAIN_DIR/frontend/demo/artwork" "$WORK/search-index.json" "$WORK/feeds-xml"
 echo "::endgroup::"
 
 if [ "${SKIP_BUILD:-}" = 1 ]; then
@@ -124,4 +139,6 @@ cd "$SITE_DIR"
 rm -rf demo/dist
 cp -r "$MAIN_DIR/frontend/dist-demo" demo/dist
 cp demo/public/_headers demo/dist/_headers
+mkdir -p demo/dist/feeds-xml
+cp "$WORK"/feeds-xml/*.xml demo/dist/feeds-xml/
 echo "::endgroup::"
