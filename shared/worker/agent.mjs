@@ -33,6 +33,8 @@ export async function negotiate(request, env) {
     await res.body?.cancel();
     return null;
   }
+  // visible in `wrangler tail`, so an unexpected Markdown answer can be traced to its client
+  console.log('markdown twin', url.pathname, request.headers.get('Sec-Fetch-Dest') || '-', request.headers.get('User-Agent') || '-');
   const out = new Response(res.body, res);
   out.headers.set('Content-Type', MARKDOWN_TYPE);
   out.headers.append('Vary', 'Accept');
