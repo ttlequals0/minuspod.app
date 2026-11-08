@@ -10,12 +10,13 @@ Needs Docker, Node (see `.nvmrc`), Python 3 and a checkout of the MinusPod main 
 export SNAPSHOT_DB=/path/demo-snapshot-YYYY-MM-DD.db
 export ARTWORK_TAR=/path/artwork.tar
 export OVERRIDES_TAR=/path/overrides.tar
+export RSS_TAR=/path/rss.tar
 export DEMO_LEAK_HOSTS=feeds.example.invalid,cdn.example.invalid
 export TRANSCRIPT_WINDOW=600   # optional
 bash scripts/demo-pipeline.sh $HOME/repos/MinusPod /tmp/demo-work
 ```
 
-- The tarballs hold top-level `artwork/` and `overrides/` directories.
+- `artwork.tar` and `overrides.tar` hold top-level `artwork/` and `overrides/` directories; `rss.tar` holds `podcasts/<slug>/modified-rss.xml`, which the pipeline unpacks into the app data directory as its RSS cache.
 - `SKIP_BUILD=1` stops after the leak check. `IMAGE` overrides `ttlequals0/minuspod:cpu`.
 - `CF_BEACON_TOKEN_DEMO` sets the analytics beacon token for the build (optional).
 - `DEMO_WORKERS` sets the app's gunicorn workers (default 8); the rate limits are per worker.

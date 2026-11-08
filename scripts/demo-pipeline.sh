@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Usage: demo-pipeline.sh <main-dir> <work-dir>
-# Env: SNAPSHOT_DB ARTWORK_TAR OVERRIDES_TAR DEMO_LEAK_HOSTS (required);
+# Env: SNAPSHOT_DB ARTWORK_TAR OVERRIDES_TAR RSS_TAR DEMO_LEAK_HOSTS (required);
 #      IMAGE, TRANSCRIPT_WINDOW, SKIP_BUILD, CF_BEACON_TOKEN_DEMO (optional);
 #      DEMO_WORKERS = gunicorn workers (default 8; rate limits are per worker).
 set -euo pipefail
@@ -10,7 +10,7 @@ mkdir -p "${2:?usage: demo-pipeline.sh <main-dir> <work-dir>}"
 WORK="$(cd "$2" && pwd)"
 SITE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IMAGE="${IMAGE:-ttlequals0/minuspod:cpu}"
-: "${SNAPSHOT_DB:?}" "${ARTWORK_TAR:?}" "${OVERRIDES_TAR:?}" "${DEMO_LEAK_HOSTS:?}"
+: "${SNAPSHOT_DB:?}" "${ARTWORK_TAR:?}" "${OVERRIDES_TAR:?}" "${RSS_TAR:?}" "${DEMO_LEAK_HOSTS:?}"
 
 CONTAINER=demo-app
 CRAWL_DIR="$MAIN_DIR/scripts/demo/crawl"
@@ -34,6 +34,10 @@ cp "$SNAPSHOT_DB" "$WORK/data/podcast.db"
 chmod 0644 "$WORK/data/podcast.db"
 tar -xf "$ARTWORK_TAR" -C "$WORK"
 tar -xf "$OVERRIDES_TAR" -C "$WORK"
+# rendered feeds recorded from the live instance: the app serves them as its RSS cache, since it
+# cannot fetch upstream feeds on the internal network
+tar -xf "$RSS_TAR" -C "$WORK/data"
+[ -d "$WORK/data/podcasts" ] || { echo "RSS_TAR has no podcasts/ directory" >&2; exit 1; }
 echo "::endgroup::"
 
 echo "::group::Start isolated app"
