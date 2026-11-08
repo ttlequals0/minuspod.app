@@ -47,7 +47,7 @@ APP_IP="$(docker inspect -f '{{(index .NetworkSettings.Networks "demo-net").IPAd
 BASE="http://$APP_IP:8000"
 # Docker Desktop cannot route to container IPs: if the direct IP never answers, relay through a loopback port
 reachable=0
-for _ in $(seq 7); do
+for _ in $(seq 20); do
   if curl -sS --max-time 3 -o /dev/null "$BASE/" 2>/dev/null; then reachable=1; break; fi
   sleep 3
 done
@@ -70,7 +70,7 @@ fi
 echo "::endgroup::"
 
 echo "::group::Egress gate"
-docker exec "$CONTAINER" python3 -c pass
+docker exec "$CONTAINER" python3 -c pass || { echo "egress gate: python3 unavailable in $CONTAINER" >&2; exit 1; }
 if docker exec "$CONTAINER" python3 -c "import urllib.request; urllib.request.urlopen('https://example.com', timeout=5)" >/dev/null 2>&1; then
   echo "egress gate failed: container reached the internet, demo-net is not internal" >&2
   exit 1
