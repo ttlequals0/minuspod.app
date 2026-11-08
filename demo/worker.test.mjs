@@ -115,13 +115,15 @@ test('a failed manifest load is retried on the next request', async () => {
         if (path === '/feeds-xml/index.json') {
           indexCalls += 1;
           if (indexCalls === 1) throw new Error('transient');
+          if (indexCalls === 2) return new Response('missing', { status: 404 });
           return Response.json(['show']);
         }
         return path.startsWith('/feeds-xml/') ? xml() : html();
       },
     },
   };
-  assert.match((await get(e, '/show')).headers.get('Content-Type'), /html/);
+  assert.match((await get(e, '/show')).headers.get('Content-Type'), /html/); // thrown
+  assert.match((await get(e, '/show')).headers.get('Content-Type'), /html/); // 404, not cached either
   assert.equal((await get(e, '/show')).headers.get('Content-Type'), 'application/xml; charset=utf-8');
-  assert.equal(indexCalls, 2);
+  assert.equal(indexCalls, 3);
 });

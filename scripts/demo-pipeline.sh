@@ -111,7 +111,7 @@ slugs="$(curl -fsS "$BASE/api/v1/feeds?includeLatestEpisodes=false" \
 count=0
 while IFS= read -r slug; do
   # The Worker only serves slugs made of these characters (demo/worker.mjs FEED_PATH).
-  [[ "$slug" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "feed slug is not servable by the demo Worker: $slug" >&2; exit 1; }
+  [[ "$slug" =~ ^[A-Za-z0-9._-]+$ && "$slug" != . && "$slug" != .. ]] || { echo "feed slug is not servable by the demo Worker: $slug" >&2; exit 1; }
   status="$(curl -sS -o "$WORK/feeds-xml/$slug.xml" -w '%{http_code}' "$BASE/$slug")" || status=000
   [ "$status" = 200 ] || { echo "feed XML for $slug returned HTTP $status" >&2; exit 1; }
   # Skip "@" inside URL paths (cover@2x.jpg) by requiring a non-path character before the address.
