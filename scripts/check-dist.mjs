@@ -27,7 +27,8 @@ const safeDecode = (s) => {
     return null;
   }
 };
-const decode = (s) => s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+const ENTITIES = { amp: '&', quot: '"', '#39': "'" };
+const decode = (s) => s.replace(/&(amp|quot|#39);/g, (m, e) => ENTITIES[e]);
 
 export const idsIn = (html) => new Set([...html.matchAll(/(?:^|\s)id="([^"]*)"/g)].map((m) => m[1]));
 

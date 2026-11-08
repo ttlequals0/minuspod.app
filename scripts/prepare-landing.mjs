@@ -48,10 +48,20 @@ export function pngSize(path) {
   return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
 }
 
+// repeat until stable so a tag split by another tag cannot survive one pass
+function stripTags(text) {
+  let prev;
+  do {
+    prev = text;
+    text = text.replace(/<[^>]*>/g, '');
+  } while (text !== prev);
+  return text;
+}
+
 export function extractPitch(readme) {
   const para = readme.split(/\n\s*\n/).find((p) => p.trim().startsWith('MinusPod is'));
   if (!para) throw new Error('Pitch paragraph starting with "MinusPod is" not found');
-  return stripMarkdown(para.replace(/<[^>]*>/g, '').replace(/\s*\n\s*/g, ' ').trim());
+  return stripMarkdown(stripTags(para).replace(/\s*\n\s*/g, ' ').trim());
 }
 
 const BRAND = ['logo.svg', 'logo-dark.svg', 'favicon.svg', 'apple-touch-icon.png'];
