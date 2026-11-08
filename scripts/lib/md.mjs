@@ -59,8 +59,8 @@ export function firstH1(lines, fenced) {
   return i === -1 ? null : { index: i, text: stripMarkdown(lines[i].slice(2)) };
 }
 
-// Spec pages open with a metadata block (Date, Status, Target release); that is not a description either.
-const NON_PROSE = /^(#|\||<|```|~~~|[-*+] |\d+\. |>|https?:\/\/|!\[|(Date|Status|Target( release| version)?|Issue|Author): )/;
+const NON_PROSE = /^(#|\||<|```|~~~|[-*+] |\d+\. |>|https?:\/\/|!\[)/;
+const METADATA_LINE = /^[A-Z][A-Za-z ]{0,30}: /; // "Date: 2026-07-12", "Status: implemented"
 
 export function firstParagraph(lines, fenced) {
   let para = [];
@@ -70,7 +70,9 @@ export function firstParagraph(lines, fenced) {
       para.push(fenced[i] ? '```' : lines[i].trim());
       continue;
     }
-    if (para.length && !NON_PROSE.test(para[0]) && !isNavLine(para[0])) {
+    // a spec's opening block of "Key: value" lines is metadata, not a description
+    const metadata = METADATA_LINE.test(para[0]) && para.filter((l) => METADATA_LINE.test(l)).length * 2 >= para.length; // wrapped values allowed
+    if (para.length && !NON_PROSE.test(para[0]) && !isNavLine(para[0]) && !metadata) {
       return stripMarkdown(para.join(' ')).replace(/\s+/g, ' ');
     }
     para = [];
@@ -88,7 +90,6 @@ export function truncateWords(s, max) {
 // Cut at the last sentence end that fits; a single long sentence gets a word cut and an ellipsis.
 export function truncateSentence(s, max) {
   if (s.length <= max) return s;
-  const ends = [...s.slice(0, max).matchAll(/[.!?](?=\s)/g)];
-  const last = ends.at(-1);
-  return last ? s.slice(0, last.index + 1) : truncateWords(s, max - 3) + '...';
+  const sentences = /^.*[.!?](?=\s)/s.exec(s.slice(0, max));
+  return sentences ? sentences[0] : truncateWords(s, max - 3) + '...';
 }

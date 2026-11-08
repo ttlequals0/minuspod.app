@@ -4,6 +4,7 @@ import Button from '../components/Button.astro';
 import VideoCard from '../components/VideoCard.astro';
 import videos from '../generated/videos.json';
 import { pitch } from '../generated/pitch.json';
+import { SOCIAL_IMAGE_PATH } from '../../../shared/social.mjs';
 
 const demo = videos.find((v) => v.name === 'demo');
 const description = pitch.split('. ')[0] + '.';
@@ -13,7 +14,7 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   name: 'MinusPod',
-  url: 'https://minuspod.app/',
+  url: new URL('/', Astro.site).href,
   description: pitch,
   applicationCategory: 'MultimediaApplication',
   operatingSystem: 'Linux, Docker',
@@ -21,7 +22,7 @@ const jsonLd = {
   license: 'https://github.com/ttlequals0/MinusPod/blob/main/LICENSE',
   codeRepository: 'https://github.com/ttlequals0/MinusPod',
   softwareHelp: 'https://docs.minuspod.app/',
-  ...(demo && { screenshot: new URL('/videos/demo-landscape.jpg', Astro.site).href }),
+  ...(demo && { screenshot: new URL(SOCIAL_IMAGE_PATH, Astro.site).href }),
 };
 ---
 

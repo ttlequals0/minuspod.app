@@ -1,7 +1,7 @@
 // run_worker_first sends everything except /assets, /demo and /feeds-xml here.
 const NOINDEX = { 'X-Robots-Tag': 'noindex, nofollow' };
 const FEED_PATH = /^\/([A-Za-z0-9._-]+?)(\.xml|\.rss)?$/;
-const FILE_PATH = /\.(?!html?$)(?=[0-9]*[A-Za-z])[A-Za-z0-9]{1,8}$/; // an extension with a letter in it; .html keeps the SPA fallback
+const FILE_PATH = /\.(?!html?$)[a-z][a-z0-9]{0,7}$/i; // has an extension; .html keeps the SPA fallback
 const slugCache = new WeakMap(); // per ASSETS binding, so once per isolate in production
 
 function loadSlugs(env, url) {
@@ -41,7 +41,8 @@ export default {
     }
     const res = await env.ASSETS.fetch(request);
     // The SPA fallback would answer /sitemap.xml or /x.php with the app shell, so file-like paths get a 404.
-    if (FILE_PATH.test(pathname) && res.ok && /text\/html/.test(res.headers.get('Content-Type') || '')) {
+    if (FILE_PATH.test(pathname) && res.ok && (res.headers.get('Content-Type') ?? '').includes('text/html')) {
+      await res.body?.cancel();
       return new Response(request.method === 'HEAD' ? null : 'Not found', { status: 404, headers: { 'Cache-Control': 'no-store', ...NOINDEX } });
     }
     return res;
