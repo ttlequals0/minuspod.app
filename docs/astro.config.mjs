@@ -81,6 +81,10 @@ export const SIDEBAR = [
   },
 ];
 
+// Starlight sets twitter:card to summary_large_image without an image, so reuse the landing poster.
+const SOCIAL_IMAGE = 'https://minuspod.app/videos/demo-landscape.jpg';
+const SOCIAL_IMAGE_ALT = 'The MinusPod web UI showing an episode with its ad segments marked';
+
 export default defineConfig({
   site: 'https://docs.minuspod.app',
   integrations: [
@@ -105,6 +109,10 @@ export default defineConfig({
         './src/styles/theme.css',
       ],
       head: [
+        { tag: 'meta', attrs: { property: 'og:image', content: SOCIAL_IMAGE } },
+        { tag: 'meta', attrs: { property: 'og:image:alt', content: SOCIAL_IMAGE_ALT } },
+        { tag: 'meta', attrs: { name: 'twitter:image', content: SOCIAL_IMAGE } },
+        { tag: 'meta', attrs: { name: 'twitter:image:alt', content: SOCIAL_IMAGE_ALT } },
         ...beaconHead(),
       ],
       sidebar: SIDEBAR,

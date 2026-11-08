@@ -10,11 +10,14 @@ interface Props {
   title: string;
   description: string;
   noindex?: boolean;
+  jsonLd?: Record<string, unknown>;
 }
 
-const { title, description, noindex = false } = Astro.props;
+const { title, description, noindex = false, jsonLd } = Astro.props;
 const path = Astro.url.pathname;
+const pageUrl = new URL(path, Astro.site).href;
 const image = videos.some((v) => v.name === 'demo') ? new URL('/videos/demo-landscape.jpg', Astro.site).href : null;
+const imageAlt = 'The MinusPod web UI showing an episode with its ad segments marked';
 const token = beaconToken(import.meta.env.PUBLIC_CF_BEACON_TOKEN_LANDING);
 const nav = [
   { label: 'Docs', href: 'https://docs.minuspod.app/' },
@@ -32,12 +35,21 @@ const nav = [
     <script is:inline set:html={bootstrap} />
     <title>{title}</title>
     <meta name="description" content={description} />
-    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={new URL(path, Astro.site).href} />}
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={pageUrl} />}
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    <meta property="og:site_name" content="MinusPod" />
+    <meta property="og:url" content={pageUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     {image && <meta property="og:image" content={image} />}
+    {image && <meta property="og:image:alt" content={imageAlt} />}
+    <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
     {image && <meta name="twitter:image" content={image} />}
+    {image && <meta name="twitter:image:alt" content={imageAlt} />}
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
     <link rel="icon" href="/brand/favicon.svg" />
     <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
     {token && <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token })}></script>}

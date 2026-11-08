@@ -34,6 +34,18 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
     expect(html).toContain('class="logo-light"');
     expect(html).toContain('class="logo-dark"');
   });
+
+  test('landing head carries the social and structured-data tags', () => {
+    expect(html).toMatch(/<title>MinusPod: [^<]+<\/title>/);
+    expect(html).toContain('<meta property="og:url" content="https://minuspod.app/">');
+    expect(html).toContain('<meta property="og:site_name" content="MinusPod">');
+    expect(html).toContain('<meta name="twitter:card" content="summary_large_image">');
+    expect(html).toContain('<link rel="sitemap" type="application/xml" href="/sitemap.xml">');
+    expect(html).toMatch(/<h1>\s*<span class="sr-only">MinusPod<\/span>/);
+    const ld = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s);
+    expect(ld).not.toBeNull();
+    expect(JSON.parse(ld[1])['@type']).toBe('SoftwareApplication');
+  });
 });
 
 describe.skipIf(!docsHtml)('docs built html (build docs first)', () => {
@@ -54,5 +66,10 @@ describe.skipIf(!docsHtml)('docs built html (build docs first)', () => {
   test('docs inline Starlight theme provider is replaced', () => {
     expect(docsHtml).toContain('dataset.pair');
     expect(docsHtml).not.toContain('starlight-theme');
+  });
+
+  test('docs pages carry a social image for the large card', () => {
+    expect(docsHtml).toContain('name="twitter:card" content="summary_large_image"');
+    expect(docsHtml).toContain('property="og:image" content="https://minuspod.app/videos/demo-landscape.jpg"');
   });
 });
