@@ -1,5 +1,5 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
+  "$schema": "../node_modules/wrangler/config-schema.json",
   "name": "minuspod-demo",
   "main": "./worker.mjs",
   "compatibility_date": "2026-11-06",
@@ -7,9 +7,8 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "html_handling": "auto-trailing-slash",
     // a hard reload bypasses the mock service worker; answer /api/ with JSON instead of the SPA shell
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api", "/api/*"]
   },
   "routes": [{ "pattern": "demo.minuspod.app", "custom_domain": true }]
 }

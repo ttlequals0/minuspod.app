@@ -20,5 +20,6 @@ bash scripts/demo-pipeline.sh $HOME/repos/MinusPod /tmp/demo-work
 - `CF_BEACON_TOKEN_DEMO` sets the analytics beacon token for the build (optional).
 - `DEMO_WORKERS` sets the app's gunicorn workers (default 8); the rate limits are per worker.
 - Each run starts a fresh `demo-app` container, because the backend rate limits repeat crawls.
-- The leak check exit code stops the script before the build.
+- The leak check exit code stops the script before the build. It also scans the live-mutated `$WORK/data/podcast.db`.
+- Preview with the Worker (exercises the `/api` 503 path): `npx wrangler dev --config demo/wrangler.jsonc --port 8788`.
 - Preview: `npx --prefix $HOME/repos/MinusPod/frontend vite preview --outDir demo/dist --port 8788`.

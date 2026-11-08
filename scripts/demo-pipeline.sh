@@ -16,7 +16,14 @@ CONTAINER=demo-app
 CRAWL_DIR="$MAIN_DIR/scripts/demo/crawl"
 
 RELAY=demo-relay
-cleanup() { docker rm -f "$CONTAINER" "$RELAY" >/dev/null 2>&1 || true; }
+cleanup() {
+  docker rm -f "$CONTAINER" "$RELAY" >/dev/null 2>&1 || true
+  # hand the uid 1000 data dir back so the next run can delete it
+  if [ -d "$WORK/data" ]; then
+    docker run --rm --user root --entrypoint chown -v "$WORK/data:/app/data" "$IMAGE" \
+      -R "$(id -u):$(id -g)" /app/data >/dev/null 2>&1 || true
+  fi
+}
 trap cleanup EXIT
 
 echo "::group::Prepare work dir"
@@ -38,8 +45,13 @@ docker run -d --name "$CONTAINER" --network demo-net -v "$WORK/data:/app/data" \
   -e GUNICORN_WORKERS="${DEMO_WORKERS:-8}" -e MINUSPOD_RATE_LIMIT_DISABLED=true "$IMAGE" >/dev/null
 APP_IP="$(docker inspect -f '{{(index .NetworkSettings.Networks "demo-net").IPAddress}}' "$CONTAINER")"
 BASE="http://$APP_IP:8000"
-# Docker Desktop cannot route to container IPs: relay through a published loopback port
-if ! curl -sS --max-time 3 -o /dev/null "$BASE/" 2>/dev/null; then
+# Docker Desktop cannot route to container IPs: if the direct IP never answers, relay through a loopback port
+reachable=0
+for _ in $(seq 7); do
+  if curl -sS --max-time 3 -o /dev/null "$BASE/" 2>/dev/null; then reachable=1; break; fi
+  sleep 3
+done
+if [ "$reachable" != 1 ]; then
   docker run -d --name "$RELAY" -p 127.0.0.1::8000 alpine/socat \
     TCP-LISTEN:8000,fork,reuseaddr "TCP:$CONTAINER:8000" >/dev/null
   docker network connect demo-net "$RELAY"
@@ -58,6 +70,7 @@ fi
 echo "::endgroup::"
 
 echo "::group::Egress gate"
+docker exec "$CONTAINER" python3 -c pass
 if docker exec "$CONTAINER" python3 -c "import urllib.request; urllib.request.urlopen('https://example.com', timeout=5)" >/dev/null 2>&1; then
   echo "egress gate failed: container reached the internet, demo-net is not internal" >&2
   exit 1
