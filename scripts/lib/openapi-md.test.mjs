@@ -14,7 +14,7 @@ const spec = {
     parameters: { slug: { name: 'slug', in: 'path', required: true, schema: { type: 'string' }, description: 'Feed slug' } },
     responses: { NotFound: { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } } },
     schemas: {
-      Error: { type: 'object', required: ['error'], properties: { error: { type: 'string', description: 'What went wrong | why' } } },
+      Error: { type: 'object', required: ['error'], properties: { error: { type: 'string', description: 'What went wrong | why, C:\\path' } } },
       Feed: {
         type: 'object',
         description: 'A feed.',
@@ -80,7 +80,7 @@ describe('propertyItems', () => {
       '- `stats` (object)',
       '- `stats.total` (integer)',
     ]);
-    expect(propertyItems(spec, spec.components.schemas.Error)).toEqual(['- `error` (string, required): What went wrong \\| why']);
+    expect(propertyItems(spec, spec.components.schemas.Error)).toEqual(['- `error` (string, required): What went wrong \\| why, C:\\\\path']);
   });
 });
 

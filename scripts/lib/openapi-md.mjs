@@ -13,7 +13,8 @@ const apiHref = (slug) => `/api/${slug}/`;
 // spec prose is Markdown, but placeholders such as <slug> outside code spans would parse as HTML
 export const prose = (s) =>
   String(s ?? '').replace(/(`+[^`]*`+)|<|&(?![a-z0-9#]+;)/g, (m, span) => span ?? (m === '<' ? '&lt;' : '&amp;'));
-const cell = (s) => prose(s).replace(/\|/g, '\\|').replace(/\s*\n\s*/g, ' ').trim();
+// table cells: a backslash or pipe in spec prose must not end the cell or eat the next escape
+const cell = (s) => prose(s).replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\s*\n\s*/g, ' ').trim();
 const table = (header, rows) =>
   [`| ${header.join(' | ')} |`, `| ${header.map(() => '---').join(' | ')} |`, ...rows.map((r) => `| ${r.map(cell).join(' | ')} |`)].join('\n');
 const code = (v) => `\`${typeof v === 'string' ? v : JSON.stringify(v)}\``;
