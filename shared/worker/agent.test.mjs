@@ -62,7 +62,7 @@ describe('pageHeaders', () => {
     const res = pageHeaders(html(200, { Vary: 'Accept-Encoding' }), '/gallery/', 'text/html');
     expect(res.headers.get('Vary')).toBe('Accept-Encoding');
     expect(res.headers.get('Link')).toBe(
-      '</.well-known/api-catalog>; rel="api-catalog", <https://docs.minuspod.app/openapi.yaml>; rel="service-desc"; type="application/yaml", <https://docs.minuspod.app/api-and-webhooks/>; rel="service-doc", </gallery.md>; rel="alternate"; type="text/markdown"',
+      '</.well-known/api-catalog>; rel="api-catalog", <https://docs.minuspod.app/openapi.yaml>; rel="service-desc"; type="application/yaml", <https://docs.minuspod.app/openapi.json>; rel="service-desc"; type="application/json", <https://docs.minuspod.app/api-and-webhooks/>; rel="service-doc", </gallery.md>; rel="alternate"; type="text/markdown"',
     );
     expect(pageHeaders(html(), '/', null).headers.get('Link')).toContain('</index.md>; rel="alternate"');
   });

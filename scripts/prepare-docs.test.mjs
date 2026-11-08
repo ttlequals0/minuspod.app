@@ -13,7 +13,9 @@ test.each([
   ['../web-interface.md#held-for-review', 'videos/README.md', '/web-interface/#held-for-review'],
   ['../../README.md', 'videos/README.md', 'https://github.com/ttlequals0/MinusPod#readme'],
   ['../README.md', 'installation.md', 'https://github.com/ttlequals0/MinusPod#readme'],
-  ['../openapi.yaml', 'api-and-webhooks.md', 'https://demo.minuspod.app/api-docs/'],
+  ['../openapi.yaml', 'api-and-webhooks.md', '/api/'],
+  ['../openapi.yaml#/components/schemas/FeedSummary', 'api-and-webhooks.md', '/api/schemas/#feedsummary'],
+  ['../openapi.yaml#/paths/~1feeds', 'api-and-webhooks.md', '/api/'],
   ['../src/config.py', 'installation.md', 'https://github.com/ttlequals0/MinusPod/blob/main/src/config.py'],
   ['../benchmarks/llm/', 'llm-providers.md', 'https://github.com/ttlequals0/MinusPod/tree/main/benchmarks/llm/'],
   ['images/wf-overview-dark.svg', 'workflows.md', '/images/wf-overview-dark.svg'],
@@ -138,7 +140,7 @@ test('throws on a video line with no matching table row', () => {
 
 test('labels the specs index as the sidebar overview', () => {
   const page = transformMarkdown('# Specs\n\nAll specs.\n', 'specs/README.md');
-  expect(renderPage(page, 'specs/index.md')).toBe('---\ntitle: "Specs"\ndescription: "All specs."\nslug: specs\nsidebar:\n  label: Overview\n  order: 0\n---\n\nAll specs.\n');
+  expect(renderPage(page, 'specs/index.md')).toBe('---\ntitle: "Specs"\ndescription: "All specs."\nslug: specs\nsidebar:\n  label: "Overview"\n  order: 0\n---\n\nAll specs.\n');
   expect(renderPage(transformMarkdown('# A\n\nB.\n', 'specs/a.md'), 'specs/a.md')).not.toContain('sidebar:');
 });
 
@@ -169,4 +171,10 @@ test('headingSlug keeps underscores', () => {
 test('throws when a video target fragment matches no heading', () => {
   const src = '# Web Interface\n\n## Other\n\nText.\n';
   expect(() => transformMarkdown(src, 'web-interface.md', videoIndex(videosReadme))).toThrow('Video target web-interface.md#held-for-review has no matching heading');
+});
+
+test('renderPage writes sidebar and table of contents frontmatter when a page carries them', () => {
+  const out = renderPage({ frontmatter: { title: 'T', description: 'D', sidebar: { order: 2, label: 'Two' }, tableOfContents: true }, body: 'x\n' }, 'api/t.md');
+  expect(out).toBe('---\ntitle: "T"\ndescription: "D"\nsidebar:\n  order: 2\n  label: "Two"\ntableOfContents:\n  minHeadingLevel: 2\n  maxHeadingLevel: 2\n---\n\nx\n');
+  expect(renderPage({ frontmatter: { title: 'S', description: '' }, body: 'y' }, 'specs/index.md')).toContain('sidebar:\n  label: "Overview"\n  order: 0\n');
 });

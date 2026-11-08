@@ -44,6 +44,7 @@ docs/public/screenshots/
 docs/public/schemas/
 docs/public/examples/
 docs/public/openapi.yaml
+docs/public/openapi.json
 landing/public/brand/
 landing/src/generated/
 

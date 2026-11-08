@@ -26,8 +26,10 @@ is missing:
   with `/installation.md`. Answers to requests that mention `text/markdown` carry
   `Vary: Accept`; browser responses do not, so prefetch caches can reuse them.
 - `/.well-known/api-catalog` points at the MinusPod OpenAPI spec (copied from the main repo to
-  `docs.minuspod.app/openapi.yaml` at build time) and the API docs page. Every page names these
-  and its twin in a `Link` header.
+  `docs.minuspod.app/openapi.yaml` and `openapi.json` at build time) and the API docs page. Every
+  page names these and its twin in a `Link` header.
+- The API reference under `docs.minuspod.app/api/` is generated from the spec at build time by
+  `scripts/lib/openapi-md.mjs`: one page per tag, one for the schemas.
 
 ## Local loop
 
