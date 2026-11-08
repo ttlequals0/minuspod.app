@@ -5,6 +5,7 @@ import { jevDir, mainDir, repoRoot } from './lib/main-dir.mjs';
 import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, describeText } from './lib/md.mjs';
 import { videoIndex } from './lib/videos.mjs';
 import { apiPages } from './lib/openapi-md.mjs';
+import { ARCHIVE_DIR, ARCHIVE_SLUG, BENCHMARK_PAGES } from '../shared/benchmark-pages.mjs';
 import { parse as parseYaml } from 'yaml';
 
 const GH = 'https://github.com/ttlequals0/MinusPod';
@@ -18,43 +19,14 @@ const THEMED_PICTURE = /<picture>\s*<source\b([^>]*)>\s*<img\b([^>]*?)\s*\/?>\s*
 // Lowercased page path without .md; a trailing README names its directory.
 const pageKey = (rel) => rel.slice(0, -3).toLowerCase().replace(/(^|\/)readme$/, '');
 
-// Where a page comes from: the repo, the directory its relative path is under, and its slug
-// when it does not follow from the path. Docs pages are the default.
-const DOCS = { repo: 'main', base: 'docs' };
+// Where a page comes from: the repo, the directory its relative path is under, the page table
+// for cross-links, and its slug when it does not follow from the path. Docs pages are the default.
 const REPOS = {
   main: { gh: GH, assetRoot: 'benchmarks/', publicRoot: '/benchmarks/' },
   jev: { gh: GH_JEV, assetRoot: 'benchmark/', publicRoot: '/benchmarks/jev/' },
 };
-// Benchmark pages pulled from outside docs/, by repo path. Archive reports are added at run time.
-export const BENCHMARK_PAGES = {
-  main: {
-    'benchmarks/llm/README.md': { slug: 'benchmarks/llm', title: 'LLM benchmark' },
-    'benchmarks/llm/results/report.md': {
-      slug: 'benchmarks/llm/results',
-      title: 'LLM benchmark results',
-      description: 'Accuracy, cost, latency and JSON compliance of each model on the human-verified ad corpus, from the latest run.',
-      long: true,
-    },
-    'benchmarks/llm/results/parse-and-moderation.md': { slug: 'benchmarks/llm/parse-and-moderation', title: 'LLM parsing and moderation' },
-    'benchmarks/llm/data/README.md': { slug: 'benchmarks/llm/data', title: 'LLM benchmark corpus' },
-    'benchmarks/llm/CONTRIBUTING.md': { slug: 'benchmarks/llm/contributing', title: 'Contributing to the LLM benchmark' },
-    'benchmarks/cues/README.md': { slug: 'benchmarks/cues', title: 'Cue benchmark' },
-  },
-  jev: {
-    'benchmark/README.md': { slug: 'benchmarks/jev', title: 'Jev benchmark' },
-    'benchmark/results/report-combined.md': {
-      slug: 'benchmarks/jev/results',
-      title: 'Jev benchmark results',
-      description: 'The Jev proxy against chat models on the same ad corpus: accuracy, cost, latency and JSON compliance, combined across addressing modes.',
-      long: true,
-    },
-    'benchmark/results/report.md': { slug: 'benchmarks/jev/results-segment-ids', title: 'Jev results, segment IDs mode', long: true },
-    'benchmark/results/parse-and-moderation.md': { slug: 'benchmarks/jev/parse-and-moderation', title: 'Jev parsing and moderation' },
-    'benchmark/results/audit-2026-09-19.md': { slug: 'benchmarks/jev/audit-2026-09-19', title: 'Jev benchmark audit, 2026-09-19' },
-  },
-};
-const REPORT_ASSET = /\/report_assets\/[^/]+\.(svg|png)$/;
-const ARCHIVE = 'benchmarks/llm/results/archive';
+const DOCS = { repo: 'main', base: 'docs', pages: BENCHMARK_PAGES };
+const IMAGE = /\.(svg|png|jpe?g|webp|gif)$/i;
 
 // Dated report directories under results/archive, newest first.
 export const archiveDates = (dir) =>
@@ -64,32 +36,29 @@ export const archiveDates = (dir) =>
     .sort()
     .reverse();
 
-export function addArchivePages(dates) {
-  dates.forEach((date, i) => {
-    BENCHMARK_PAGES.main[`${ARCHIVE}/${date}/report.md`] = {
-      slug: `benchmarks/llm/archive/${date}`,
-      title: `LLM benchmark results, ${date}`,
-      long: true,
-      sidebar: { label: date, order: i + 1 },
-    };
-  });
-}
+export const archivePages = (dates) =>
+  Object.fromEntries(
+    dates.map((date, i) => [
+      `${ARCHIVE_DIR}/${date}/report.md`,
+      { slug: `${ARCHIVE_SLUG}/${date}`, title: `LLM benchmark results, ${date}`, long: true, sidebar: { label: date, order: i + 1 } },
+    ]),
+  );
 
+// The archive group needs an index page; the dated reports are generated upstream without one.
 export const archiveIndex = (dates) => ({
   frontmatter: {
     title: 'Past LLM benchmark runs',
-    description: 'Earlier runs of the LLM benchmark, newest first. The current run is on the results page.',
-    slug: 'benchmarks/llm/archive',
+    description: 'Earlier runs of the LLM benchmark, newest first.',
+    slug: ARCHIVE_SLUG,
     sidebar: { label: 'Overview', order: 0 },
   },
-  body: `Earlier runs of the LLM benchmark, newest first. The current run is on the [results page](/benchmarks/llm/results/).\n\n${dates.map((d) => `- [${d}](/benchmarks/llm/archive/${d}/)`).join('\n')}\n`,
+  body: `The current run is on the [results page](/benchmarks/llm/results/).\n\n${dates.map((d) => `- [${d}](/${ARCHIVE_SLUG}/${d}/)`).join('\n')}\n`,
 });
 
-// Public path of a report asset directory, relative to docs/public.
-const publicAssetDir = (repo, repoDir) => `${REPOS[repo].publicRoot}${repoDir.slice(REPOS[repo].assetRoot.length)}`.slice(1);
-
 export function rewriteLink(href, fromRel, source = DOCS) {
-  if (isExternalHref(href) || href.startsWith('#')) return href;
+  if (isExternalHref(href)) return href;
+  // a same-page link whose heading is missing (old generated reports) becomes plain text
+  if (href.startsWith('#')) return source.anchors && !source.anchors.has(href.slice(1)) ? null : href;
   const hash = href.indexOf('#');
   const path = hash === -1 ? href : href.slice(0, hash);
   const fragment = hash === -1 ? '' : href.slice(hash);
@@ -97,9 +66,12 @@ export function rewriteLink(href, fromRel, source = DOCS) {
   const repoPath = posix.normalize(posix.join(source.base, posix.dirname(fromRel), path));
   const { gh, assetRoot, publicRoot } = REPOS[source.repo];
 
-  const page = BENCHMARK_PAGES[source.repo][repoPath];
+  const page = source.pages[source.repo][repoPath.endsWith('/') ? `${repoPath}README.md` : repoPath];
   if (page) return `/${page.slug}/${fragment}`;
-  if (REPORT_ASSET.test(repoPath) && repoPath.startsWith(assetRoot)) return `${publicRoot}${repoPath.slice(assetRoot.length)}${fragment}`;
+  if (IMAGE.test(repoPath) && repoPath.startsWith(assetRoot)) {
+    source.assets?.add(repoPath);
+    return `${publicRoot}${repoPath.slice(assetRoot.length)}${fragment}`;
+  }
   if (source.repo !== 'main') return `${gh}/${repoPath.endsWith('/') ? 'tree' : 'blob'}/main/${repoPath}${fragment}`;
 
   if (repoPath.startsWith('docs/')) {
@@ -133,11 +105,11 @@ const videoElement = (name) =>
   `<video controls preload="none" playsinline poster="https://minuspod.app/videos/${name}-landscape.jpg" src="https://minuspod.app/videos/minuspod-${name}-landscape.mp4"></video>`;
 
 const rewriteLinks = (text, fromRel, source) =>
-  text.replace(
-    LINK_RE,
-    (m, bang, label, href, title = '') =>
-      `${bang}[${rewriteLinks(label, fromRel, source)}](${rewriteLink(href, fromRel, source)}${title})`,
-  );
+  text.replace(LINK_RE, (m, bang, label, href, title = '') => {
+    const target = rewriteLink(href, fromRel, source);
+    const inner = rewriteLinks(label, fromRel, source);
+    return target === null ? inner : `${bang}[${inner}](${target}${title})`;
+  });
 
 const rewriteAttrs = (text, fromRel, source) =>
   text.replace(ATTR_RE, (m, attr, val) => {
@@ -215,6 +187,7 @@ export function transformMarkdown(src, fromRel, videos = [], source = DOCS) {
   });
 
   // Links can wrap across lines, so rewrite whole non-fenced runs.
+  if (source.base === '') source = { ...source, anchors: slugs };
   const rewritten = [];
   for (let i = 0; i < out.length; ) {
     let j = i;
@@ -278,15 +251,15 @@ if (isMain(import.meta.url)) {
     if (existsSync(join(docsDir, name))) cpSync(join(docsDir, name), dest, { recursive: true });
   }
 
-  // benchmark pages and their chart assets from both repos
-  const dates = archiveDates(join(main, ARCHIVE));
-  addArchivePages(dates);
+  // benchmark pages from both repos, with the images they reference
+  const dates = archiveDates(join(main, ARCHIVE_DIR));
+  const pages = { main: { ...BENCHMARK_PAGES.main, ...archivePages(dates) }, jev: BENCHMARK_PAGES.jev };
   rmSync(join(root, 'docs/public/benchmarks'), { recursive: true, force: true });
-  const copiedAssets = new Set();
   let benchmarkPages = 0;
   for (const [repo, dir] of [['main', main], ['jev', jevDir()]]) {
-    for (const [repoPath, cfg] of Object.entries(BENCHMARK_PAGES[repo])) {
-      const page = transformMarkdown(readFileSync(join(dir, repoPath), 'utf8'), repoPath, [], { repo, base: '', slug: cfg.slug });
+    for (const [repoPath, cfg] of Object.entries(pages[repo])) {
+      const assets = new Set();
+      const page = transformMarkdown(readFileSync(join(dir, repoPath), 'utf8'), repoPath, [], { repo, base: '', slug: cfg.slug, pages, assets });
       page.frontmatter.title = cfg.title;
       if (cfg.description) page.frontmatter.description = cfg.description;
       if (cfg.long) page.frontmatter.tableOfContents = true;
@@ -295,14 +268,14 @@ if (isMain(import.meta.url)) {
       mkdirSync(dirname(join(outDir, out)), { recursive: true });
       writeFileSync(join(outDir, out), renderPage(page, out));
       benchmarkPages++;
-      const assetDir = posix.join(posix.dirname(repoPath), 'report_assets');
-      if (!copiedAssets.has(assetDir) && existsSync(join(dir, assetDir))) {
-        cpSync(join(dir, assetDir), join(root, 'docs/public', publicAssetDir(repo, assetDir)), { recursive: true });
-        copiedAssets.add(assetDir);
+      for (const asset of assets) {
+        const dest = join(root, 'docs/public', REPOS[repo].publicRoot.slice(1), asset.slice(REPOS[repo].assetRoot.length));
+        mkdirSync(dirname(dest), { recursive: true });
+        cpSync(join(dir, asset), dest);
       }
     }
   }
-  writeFileSync(join(outDir, 'benchmarks/llm/archive/index.md'), renderPage(archiveIndex(dates), 'benchmarks/llm/archive/index.md'));
+  writeFileSync(join(outDir, `${ARCHIVE_SLUG}/index.md`), renderPage(archiveIndex(dates), `${ARCHIVE_SLUG}/index.md`));
 
   // the app serves its spec with the running version; the docs copy carries the release it was built from
   const version = /__version__ = "([^"]+)"/.exec(readFileSync(join(main, 'version.py'), 'utf8'))?.[1];

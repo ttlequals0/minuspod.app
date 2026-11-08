@@ -4,19 +4,15 @@ import { fileURLToPath } from 'node:url';
 
 export const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-export function mainDir() {
-  const dir = process.env.MAIN_REPO_DIR || join(repoRoot, '.main');
-  if (!existsSync(join(dir, 'docs', 'README.md'))) {
-    throw new Error(`Main repo not found at ${dir}; run npm run fetch:main or set MAIN_REPO_DIR`);
+// A source repo checkout: the env var wins, else the gitignored clone fetch-main.sh makes.
+function sourceDir(name, env, dir, sentinel) {
+  const path = process.env[env] || join(repoRoot, dir);
+  if (!existsSync(join(path, sentinel))) {
+    throw new Error(`${name} repo not found at ${path}; run npm run fetch:main or set ${env}`);
   }
-  return dir;
+  return path;
 }
 
+export const mainDir = () => sourceDir('Main', 'MAIN_REPO_DIR', '.main', 'docs/README.md');
 // The Jev proxy repo carries its own benchmark, published under /benchmarks/jev/.
-export function jevDir() {
-  const dir = process.env.JEV_REPO_DIR || join(repoRoot, '.jev');
-  if (!existsSync(join(dir, 'benchmark', 'README.md'))) {
-    throw new Error(`MinusPodJev repo not found at ${dir}; run npm run fetch:main or set JEV_REPO_DIR`);
-  }
-  return dir;
-}
+export const jevDir = () => sourceDir('MinusPodJev', 'JEV_REPO_DIR', '.jev', 'benchmark/README.md');

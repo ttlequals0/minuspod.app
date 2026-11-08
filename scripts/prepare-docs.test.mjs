@@ -2,7 +2,8 @@ import { test, expect } from 'vitest';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { addArchivePages, archiveIndex, BENCHMARK_PAGES, listMarkdown, renderPage, rewriteLink, transformMarkdown } from './prepare-docs.mjs';
+import { BENCHMARK_PAGES } from '../shared/benchmark-pages.mjs';
+import { archiveIndex, archivePages, listMarkdown, renderPage, rewriteLink, transformMarkdown } from './prepare-docs.mjs';
 import { parseVideoTable, videoIndex } from './lib/videos.mjs';
 import { headingSlug, mapSrcset } from './lib/md.mjs';
 
@@ -17,7 +18,6 @@ test.each([
   ['../openapi.yaml#/components/schemas/FeedSummary', 'api-and-webhooks.md', '/api/schemas/#feedsummary'],
   ['../openapi.yaml#/paths/~1feeds', 'api-and-webhooks.md', '/api/'],
   ['../src/config.py', 'installation.md', 'https://github.com/ttlequals0/MinusPod/blob/main/src/config.py'],
-  ['../benchmarks/llm/', 'llm-providers.md', 'https://github.com/ttlequals0/MinusPod/tree/main/benchmarks/llm/'],
   ['images/wf-overview-dark.svg', 'workflows.md', '/images/wf-overview-dark.svg'],
   ['schemas/episode-sidecar.schema.json', 'local-feeds.md', '/schemas/episode-sidecar.schema.json'],
   ['DEPLOYMENT.md', 'README.md', '/deployment/'],
@@ -184,7 +184,7 @@ test('frontmatter skips a spec metadata paragraph', () => {
   expect(transformMarkdown(src, 'specs/review-queue.md').frontmatter.description).toBe('Rejected detections wait in a review area.');
 });
 
-const bench = (repo, slug) => ({ repo, base: '', slug });
+const bench = (repo, slug, extra = {}) => ({ repo, base: '', slug, pages: BENCHMARK_PAGES, ...extra });
 
 test.each([
   ['report_assets/pareto.svg', 'benchmarks/llm/results/report.md', 'main', '/benchmarks/llm/results/report_assets/pareto.svg'],
@@ -207,17 +207,31 @@ test('benchmark pages drop a Table of Contents and take the configured slug', ()
   expect(page.body).toContain('## Key');
 });
 
-test('archive reports are registered newest first and listed on an index page', () => {
-  addArchivePages(['2026-08-23', '2026-05-16']);
-  expect(BENCHMARK_PAGES.main['benchmarks/llm/results/archive/2026-08-23/report.md']).toEqual({
+test('archive reports get dated slugs and an index page', () => {
+  const pages = { main: { ...BENCHMARK_PAGES.main, ...archivePages(['2026-08-23', '2026-05-16']) }, jev: BENCHMARK_PAGES.jev };
+  expect(pages.main['benchmarks/llm/results/archive/2026-08-23/report.md']).toEqual({
     slug: 'benchmarks/llm/archive/2026-08-23',
     title: 'LLM benchmark results, 2026-08-23',
     long: true,
     sidebar: { label: '2026-08-23', order: 1 },
   });
-  expect(rewriteLink('archive/2026-05-16/report.md', 'benchmarks/llm/results/report.md', bench('main'))).toBe('/benchmarks/llm/archive/2026-05-16/');
+  expect(rewriteLink('archive/2026-05-16/report.md', 'benchmarks/llm/results/report.md', bench('main', undefined, { pages }))).toBe('/benchmarks/llm/archive/2026-05-16/');
   const index = renderPage(archiveIndex(['2026-08-23', '2026-05-16']), 'benchmarks/llm/archive/index.md');
   expect(index).toContain('slug: benchmarks/llm/archive');
   expect(index).toContain('  label: "Overview"');
   expect(index).toContain('- [2026-08-23](/benchmarks/llm/archive/2026-08-23/)');
+});
+
+test('a docs page link to the benchmark directory lands on the benchmark page', () => {
+  expect(rewriteLink('../benchmarks/llm/', 'llm-providers.md')).toBe('/benchmarks/llm/');
+  expect(rewriteLink('../benchmarks/llm/results/report.md', 'llm-providers.md')).toBe('/benchmarks/llm/results/');
+});
+
+test('referenced images are collected for copying and a missing same-page anchor is unlinked', () => {
+  const assets = new Set();
+  const src = '# R\n\n## Key\n\nSee [Key](#key) and [Gone](#gone).\n\n![Chart](charts/pareto.png)\n';
+  const page = transformMarkdown(src, 'benchmark/results/report.md', [], bench('jev', 'benchmarks/jev/results', { assets }));
+  expect(page.body).toContain('[Key](#key) and Gone.');
+  expect(page.body).toContain('![Chart](/benchmarks/jev/results/charts/pareto.png)');
+  expect([...assets]).toEqual(['benchmark/results/charts/pareto.png']);
 });

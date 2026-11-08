@@ -3,6 +3,7 @@ import starlight from '@astrojs/starlight';
 import { existsSync, readFileSync } from 'node:fs';
 import { beaconToken } from '../shared/beacon.mjs';
 import { presentPages } from '../shared/sidebar.mjs';
+import { benchmarkSidebar } from '../shared/benchmark-pages.mjs';
 import { SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_URL, hasSocialImage } from '../shared/social.mjs';
 
 function beaconHead() {
@@ -77,23 +78,7 @@ export const SIDEBAR = presentPages([
     ],
   },
   { label: 'Reference', items: [{ slug: 'glossary', label: 'Glossary' }] },
-  {
-    label: 'Benchmarks',
-    items: [
-      { slug: 'benchmarks/llm', label: 'LLM benchmark' },
-      { slug: 'benchmarks/llm/results', label: 'LLM results' },
-      { slug: 'benchmarks/llm/parse-and-moderation', label: 'Parsing and moderation' },
-      { slug: 'benchmarks/llm/data', label: 'Corpus' },
-      { slug: 'benchmarks/llm/contributing', label: 'Contributing to the benchmark' },
-      { label: 'Past LLM runs', collapsed: true, items: [{ autogenerate: { directory: 'benchmarks/llm/archive' } }] },
-      { slug: 'benchmarks/cues', label: 'Cue benchmark' },
-      { slug: 'benchmarks/jev', label: 'Jev benchmark' },
-      { slug: 'benchmarks/jev/results', label: 'Jev results' },
-      { slug: 'benchmarks/jev/results-segment-ids', label: 'Jev results, segment IDs' },
-      { slug: 'benchmarks/jev/parse-and-moderation', label: 'Jev parsing and moderation' },
-      { slug: 'benchmarks/jev/audit-2026-09-19', label: 'Jev audit' },
-    ],
-  },
+  benchmarkSidebar(),
   {
     label: 'Contributing',
     items: [
