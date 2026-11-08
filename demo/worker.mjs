@@ -5,13 +5,14 @@ const slugCache = new WeakMap(); // per ASSETS binding, so once per isolate in p
 
 function loadSlugs(env, url) {
   if (!slugCache.has(env.ASSETS)) {
-    slugCache.set(
-      env.ASSETS,
-      env.ASSETS.fetch(new URL('/feeds-xml/index.json', url))
-        .then((res) => (res.ok ? res.json() : []))
-        .then((list) => new Set(Array.isArray(list) ? list : []))
-        .catch(() => new Set()),
-    );
+    const load = env.ASSETS.fetch(new URL('/feeds-xml/index.json', url))
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`index.json ${res.status}`))))
+      .then((list) => new Set(Array.isArray(list) ? list : []))
+      .catch(() => {
+        slugCache.delete(env.ASSETS); // only a successful load is kept for the isolate
+        return new Set();
+      });
+    slugCache.set(env.ASSETS, load);
   }
   return slugCache.get(env.ASSETS);
 }
@@ -31,9 +32,10 @@ export default {
       const asset = await env.ASSETS.fetch(new URL(`/feeds-xml/${match[1]}.xml`, url));
       const type = asset.headers.get('Content-Type') || '';
       if (asset.ok && /^(application|text)\/xml/.test(type)) {
-        return new Response(request.method === 'HEAD' ? null : asset.body, {
-          headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600', ...NOINDEX },
-        });
+        const headers = { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600', ...NOINDEX };
+        const etag = asset.headers.get('ETag');
+        if (etag) headers.ETag = etag; // lets podcast clients revalidate instead of refetching
+        return new Response(request.method === 'HEAD' ? null : asset.body, { headers });
       }
     }
     return env.ASSETS.fetch(request);

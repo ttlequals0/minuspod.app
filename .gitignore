@@ -18,6 +18,9 @@ dist-demo/
 .wrangler/
 .cloudflare/
 demo/dist/
+# Demo pipeline work dir and downloaded snapshot (CI layout mirrored locally)
+work/
+snapshot/
 
 # Generated from the main repo at build time
 shared/generated/

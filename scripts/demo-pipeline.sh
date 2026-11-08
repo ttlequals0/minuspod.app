@@ -43,7 +43,7 @@ docker run -d --name "$CONTAINER" --network demo-net -v "$WORK/data:/app/data" \
   -e MINUSPOD_BACKGROUND_THREADS=0 -e MINUSPOD_REQUIRE_AUTH=false \
   -e BASE_URL=https://demo.minuspod.app -e WHISPER_BACKEND=local \
   -e GUNICORN_WORKERS="${DEMO_WORKERS:-8}" -e MINUSPOD_RATE_LIMIT_DISABLED=true "$IMAGE" >/dev/null
-APP_IP="$(docker inspect -f '{{(index .NetworkSettings.Networks "demo-net").IPAddress}}' "$CONTAINER")"
+APP_IP="$(docker inspect -f '{{(index .NetworkSettings.Networks "demo-net").IPAddress}}' "$CONTAINER" || true)"
 BASE="http://$APP_IP:8000"
 # Docker Desktop cannot route to container IPs: if the direct IP never answers, relay through a loopback port
 reachable=0
@@ -110,9 +110,12 @@ slugs="$(curl -fsS "$BASE/api/v1/feeds?includeLatestEpisodes=false" \
 [ -n "$slugs" ] || { echo "no feeds returned for the feed XML step" >&2; exit 1; }
 count=0
 while IFS= read -r slug; do
+  # The Worker only serves slugs made of these characters (demo/worker.mjs FEED_PATH).
+  [[ "$slug" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "feed slug is not servable by the demo Worker: $slug" >&2; exit 1; }
   status="$(curl -sS -o "$WORK/feeds-xml/$slug.xml" -w '%{http_code}' "$BASE/$slug")" || status=000
   [ "$status" = 200 ] || { echo "feed XML for $slug returned HTTP $status" >&2; exit 1; }
-  sed -E -i.bak 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/demo@example.invalid/g' "$WORK/feeds-xml/$slug.xml"
+  # Skip "@" inside URL paths (cover@2x.jpg) by requiring a non-path character before the address.
+  sed -E -i.bak 's#(^|[^/A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}#\1demo@example.invalid#g' "$WORK/feeds-xml/$slug.xml"
   rm -f "$WORK/feeds-xml/$slug.xml.bak"
   count=$((count + 1))
 done <<< "$slugs"

@@ -52,6 +52,8 @@ jobs:
         run: |
           npx wrangler deploy --dry-run --config docs/wrangler.jsonc
           npx wrangler deploy --dry-run --config landing/wrangler.jsonc
+          mkdir -p demo/dist
+          npx wrangler deploy --dry-run --config demo/wrangler.jsonc
       - uses: actions/upload-artifact@v4
         with:
           name: site-dist

@@ -64,7 +64,7 @@ jobs:
         env:
           DEMO_LEAK_HOSTS: ${{ secrets.DEMO_LEAK_HOSTS }}
           CF_BEACON_TOKEN_DEMO: ${{ vars.CF_BEACON_TOKEN_DEMO || secrets.CF_BEACON_TOKEN_DEMO }}
-          TRANSCRIPT_WINDOW: ${{ inputs.transcript_window }}
+          TRANSCRIPT_WINDOW: ${{ inputs.transcript_window || vars.TRANSCRIPT_WINDOW }}
         run: |
           set -euo pipefail
           shopt -s nullglob

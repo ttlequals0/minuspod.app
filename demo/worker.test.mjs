@@ -98,3 +98,30 @@ test('a missing index.json means no feeds', async () => {
   const res = await get(e, '/show');
   assert.match(res.headers.get('Content-Type'), /html/);
 });
+
+test('the asset ETag is passed through so clients can revalidate', async () => {
+  const tagged = () => new Response('<?xml version="1.0"?><rss/>', { headers: { 'Content-Type': 'application/xml', ETag: '"abc"' } });
+  const res = await get(env(tagged), '/show');
+  assert.equal(res.headers.get('ETag'), '"abc"');
+  assert.equal((await get(env(xml), '/show')).headers.get('ETag'), null);
+});
+
+test('a failed manifest load is retried on the next request', async () => {
+  let indexCalls = 0;
+  const e = {
+    ASSETS: {
+      async fetch(req) {
+        const path = new URL(req instanceof Request ? req.url : req).pathname;
+        if (path === '/feeds-xml/index.json') {
+          indexCalls += 1;
+          if (indexCalls === 1) throw new Error('transient');
+          return Response.json(['show']);
+        }
+        return path.startsWith('/feeds-xml/') ? xml() : html();
+      },
+    },
+  };
+  assert.match((await get(e, '/show')).headers.get('Content-Type'), /html/);
+  assert.equal((await get(e, '/show')).headers.get('Content-Type'), 'application/xml; charset=utf-8');
+  assert.equal(indexCalls, 2);
+});
