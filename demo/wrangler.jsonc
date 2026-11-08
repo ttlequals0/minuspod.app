@@ -10,5 +10,5 @@
     // the Worker answers /api/ with JSON (a hard reload bypasses the mock service worker) and serves feed XML at /<slug>
     "run_worker_first": ["/*", "!/assets/*", "!/demo/*", "!/feeds-xml/*"]
   },
-  "routes": [{ "pattern": "demo.minuspod.app", "custom_domain": true }]
+  "routes": [{ "pattern": "demo.minuspod.app/*", "zone_name": "minuspod.app" }]
 }

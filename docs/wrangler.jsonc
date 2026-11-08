@@ -10,5 +10,5 @@
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash"
   },
-  "routes": [{ "pattern": "docs.minuspod.app", "custom_domain": true }]
+  "routes": [{ "pattern": "docs.minuspod.app/*", "zone_name": "minuspod.app" }]
 }
