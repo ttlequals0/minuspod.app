@@ -61,6 +61,7 @@ export function firstH1(lines, fenced) {
 
 const NON_PROSE = /^(#|\||<|```|~~~|[-*+] |\d+\. |>|https?:\/\/|!\[)/;
 const METADATA_LINE = /^[A-Z][A-Za-z ]{0,30}: /; // "Date: 2026-07-12", "Status: implemented"
+const SPEC_KEY = /^(Date|Status|Target|Issue|Source|Author)\b/; // a lone metadata line has no structure to detect, only its key
 
 export function firstParagraph(lines, fenced) {
   let para = [];
@@ -71,7 +72,8 @@ export function firstParagraph(lines, fenced) {
       continue;
     }
     // a spec's opening block of "Key: value" lines is metadata, not a description
-    const metadata = METADATA_LINE.test(para[0]) && para.filter((l) => METADATA_LINE.test(l)).length * 2 >= para.length; // wrapped values allowed
+    const keyed = para.filter((l) => METADATA_LINE.test(l)).length;
+    const metadata = para.length === 1 ? SPEC_KEY.test(para[0]) && keyed === 1 : keyed >= 2 && keyed * 2 >= para.length; // wrapped values allowed
     if (para.length && !NON_PROSE.test(para[0]) && !isNavLine(para[0]) && !metadata) {
       return stripMarkdown(para.join(' ')).replace(/\s+/g, ' ');
     }
@@ -90,6 +92,9 @@ export function truncateWords(s, max) {
 // Cut at the last sentence end that fits; a single long sentence gets a word cut and an ellipsis.
 export function truncateSentence(s, max) {
   if (s.length <= max) return s;
-  const sentences = /^.*[.!?](?=\s)/s.exec(s.slice(0, max));
+  const sentences = new RegExp(`^[\\s\\S]{0,${max - 1}}[.!?](?=\\s|$)`).exec(s);
   return sentences ? sentences[0] : truncateWords(s, max - 3) + '...';
 }
+
+// A page description from its first paragraph; a lead-in colon becomes a period.
+export const describeText = (text) => truncateSentence(text, 160).replace(/:$/, '.');

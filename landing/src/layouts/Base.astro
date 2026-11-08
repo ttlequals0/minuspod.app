@@ -5,7 +5,7 @@ import '../styles/site.css';
 import bootstrap from '../../../shared/theme/bootstrap.js?raw';
 import ThemePicker from '../components/ThemePicker.astro';
 import videos from '../generated/videos.json';
-import { SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_PATH } from '../../../shared/social.mjs';
+import { SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_PATH, hasSocialImage } from '../../../shared/social.mjs';
 
 interface Props {
   title: string;
@@ -18,7 +18,7 @@ const { title, description, noindex = false, jsonLd } = Astro.props;
 const path = Astro.url.pathname;
 const pageTitle = title.includes('MinusPod') ? title : `${title} | MinusPod`;
 const pageUrl = new URL(path, Astro.site).href;
-const image = videos.some((v) => v.name === 'demo') ? new URL(SOCIAL_IMAGE_PATH, Astro.site).href : null;
+const image = hasSocialImage(videos) ? new URL(SOCIAL_IMAGE_PATH, Astro.site).href : null;
 const token = beaconToken(import.meta.env.PUBLIC_CF_BEACON_TOKEN_LANDING);
 const nav = [
   { label: 'Docs', href: 'https://docs.minuspod.app/' },
@@ -36,10 +36,16 @@ const nav = [
     <script is:inline set:html={bootstrap} />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
-    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={pageUrl} />}
-    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    {noindex ? (
+      <meta name="robots" content="noindex" />
+    ) : (
+      <>
+        <link rel="canonical" href={pageUrl} />
+        <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+        <meta property="og:url" content={pageUrl} />
+      </>
+    )}
     <meta property="og:site_name" content="MinusPod" />
-    <meta property="og:url" content={pageUrl} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -51,7 +57,7 @@ const nav = [
         <meta name="twitter:image:alt" content={SOCIAL_IMAGE_ALT} />
       </>
     )}
-    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
     <link rel="icon" href="/brand/favicon.svg" />
     <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
     {token && <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token })}></script>}
