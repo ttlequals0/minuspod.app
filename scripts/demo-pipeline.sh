@@ -112,16 +112,21 @@ count=0
 while IFS= read -r slug; do
   status="$(curl -sS -o "$WORK/feeds-xml/$slug.xml" -w '%{http_code}' "$BASE/$slug")" || status=000
   [ "$status" = 200 ] || { echo "feed XML for $slug returned HTTP $status" >&2; exit 1; }
-  sed -E -i 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/demo@example.invalid/g' "$WORK/feeds-xml/$slug.xml"
+  sed -E -i.bak 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/demo@example.invalid/g' "$WORK/feeds-xml/$slug.xml"
+  rm -f "$WORK/feeds-xml/$slug.xml.bak"
   count=$((count + 1))
 done <<< "$slugs"
 printf '%s\n' "$slugs" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read().split()))" > "$WORK/feeds-xml/index.json"
 if [ -n "$DEMO_LEAK_HOSTS" ]; then
-  IFS=, read -ra leak_hosts <<< "$DEMO_LEAK_HOSTS"
+  IFS=, read -ra leak_hosts <<< "$(printf '%s' "$DEMO_LEAK_HOSTS" | tr -d '[:space:]')"
   for host in "${leak_hosts[@]}"; do
     [ -n "$host" ] || continue
     for f in "$WORK"/feeds-xml/*.xml; do
-      ! grep -qiF -- "$host" "$f" || { echo "feed XML $(basename "$f") mentions a protected host" >&2; exit 1; }
+      if grep -qiF -- "$host" "$f"; then
+        echo "feed XML $(basename "$f") mentions a protected host" >&2; exit 1
+      elif [ $? -ne 1 ]; then
+        echo "feed XML host check could not read $(basename "$f")" >&2; exit 1
+      fi
     done
   done
 else
