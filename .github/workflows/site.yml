@@ -58,6 +58,8 @@ jobs:
           path: |
             docs/dist
             landing/dist
+          # .well-known/ is a hidden directory; v4 drops hidden files unless told otherwise
+          include-hidden-files: true
           if-no-files-found: error
 
   deploy:
