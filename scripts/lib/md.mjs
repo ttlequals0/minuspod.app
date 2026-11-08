@@ -59,7 +59,8 @@ export function firstH1(lines, fenced) {
   return i === -1 ? null : { index: i, text: stripMarkdown(lines[i].slice(2)) };
 }
 
-const NON_PROSE = /^(#|\||<|```|~~~|[-*+] |\d+\. |>|https?:\/\/|!\[)/;
+// Spec pages open with a metadata block (Date, Status, Target release); that is not a description either.
+const NON_PROSE = /^(#|\||<|```|~~~|[-*+] |\d+\. |>|https?:\/\/|!\[|(Date|Status|Target( release| version)?|Issue|Author): )/;
 
 export function firstParagraph(lines, fenced) {
   let para = [];
@@ -82,4 +83,12 @@ export function truncateWords(s, max) {
   const cut = s.slice(0, max);
   const at = cut.lastIndexOf(' ');
   return (at > 0 && s[max] !== ' ' ? cut.slice(0, at) : cut).trimEnd();
+}
+
+// Cut at the last sentence end that fits; a single long sentence gets a word cut and an ellipsis.
+export function truncateSentence(s, max) {
+  if (s.length <= max) return s;
+  const ends = [...s.slice(0, max).matchAll(/[.!?](?=\s)/g)];
+  const last = ends.at(-1);
+  return last ? s.slice(0, last.index + 1) : truncateWords(s, max - 3) + '...';
 }
