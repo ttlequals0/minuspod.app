@@ -24,11 +24,19 @@ export const BENCHMARK_PAGES = {
       description: 'The Jev proxy against chat models on the same ad corpus: accuracy, cost, latency and JSON compliance, combined across addressing modes.',
       long: true,
     },
-    'benchmark/results/report.md': { slug: 'benchmarks/jev/results-segment-ids', title: 'Jev results, segment IDs mode', label: 'Jev results, segment IDs', long: true },
+    'benchmark/results/report.md': {
+      slug: 'benchmarks/jev/results-segment-ids',
+      title: 'Jev results, segment IDs mode',
+      label: 'Jev results, segment IDs',
+      description: 'The Jev proxy run in segment IDs addressing mode: accuracy, cost, latency and JSON compliance per model.',
+      long: true,
+    },
     'benchmark/results/parse-and-moderation.md': { slug: 'benchmarks/jev/parse-and-moderation', title: 'Jev parsing and moderation', label: 'Jev parsing and moderation' },
     'benchmark/results/audit-2026-09-19.md': { slug: 'benchmarks/jev/audit-2026-09-19', title: 'Jev benchmark audit, 2026-09-19', label: 'Jev audit' },
   },
 };
+
+export const RESULTS_SLUG = BENCHMARK_PAGES.main['benchmarks/llm/results/report.md'].slug;
 
 // Dated LLM reports live under this directory and are published at /benchmarks/llm/archive/<date>/.
 export const ARCHIVE_DIR = 'benchmarks/llm/results/archive';
@@ -38,7 +46,7 @@ export const ARCHIVE_SLUG = 'benchmarks/llm/archive';
 export function benchmarkSidebar() {
   const entry = ({ slug, label }) => ({ slug, label });
   const items = [...Object.values(BENCHMARK_PAGES.main), ...Object.values(BENCHMARK_PAGES.jev)].map(entry);
-  const after = items.findIndex((i) => i.slug === 'benchmarks/llm/results');
+  const after = items.findIndex((i) => i.slug === RESULTS_SLUG);
   items.splice(after + 1, 0, { label: 'Past LLM runs', collapsed: true, items: [{ autogenerate: { directory: ARCHIVE_SLUG } }] });
   return { label: 'Benchmarks', items };
 }

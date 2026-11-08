@@ -1,9 +1,9 @@
-import { test, expect } from 'vitest';
+import { test, expect, vi } from 'vitest';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BENCHMARK_PAGES } from '../shared/benchmark-pages.mjs';
-import { archiveIndex, archivePages, listMarkdown, renderPage, rewriteLink, transformMarkdown } from './prepare-docs.mjs';
+import { archiveDates, archiveIndex, archivePages, listMarkdown, renderPage, rewriteLink, transformMarkdown } from './prepare-docs.mjs';
 import { parseVideoTable, videoIndex } from './lib/videos.mjs';
 import { headingSlug, mapSrcset } from './lib/md.mjs';
 
@@ -184,7 +184,7 @@ test('frontmatter skips a spec metadata paragraph', () => {
   expect(transformMarkdown(src, 'specs/review-queue.md').frontmatter.description).toBe('Rejected detections wait in a review area.');
 });
 
-const bench = (repo, slug, extra = {}) => ({ repo, base: '', slug, pages: BENCHMARK_PAGES, ...extra });
+const bench = (repo, slug, extra = {}) => ({ repo, base: '', slug, pages: BENCHMARK_PAGES, assets: new Map(), ...extra });
 
 test.each([
   ['report_assets/pareto.svg', 'benchmarks/llm/results/report.md', 'main', '/benchmarks/llm/results/report_assets/pareto.svg'],
@@ -212,10 +212,15 @@ test('archive reports get dated slugs and an index page', () => {
   expect(pages.main['benchmarks/llm/results/archive/2026-08-23/report.md']).toEqual({
     slug: 'benchmarks/llm/archive/2026-08-23',
     title: 'LLM benchmark results, 2026-08-23',
+    description: 'The LLM benchmark run of 2026-08-23: accuracy, cost, latency and JSON compliance per model.',
     long: true,
     sidebar: { label: '2026-08-23', order: 1 },
   });
   expect(rewriteLink('archive/2026-05-16/report.md', 'benchmarks/llm/results/report.md', bench('main', undefined, { pages }))).toBe('/benchmarks/llm/archive/2026-05-16/');
+  // a docs page links into the archive and to a benchmark image: page on the site, image on GitHub
+  const docs = { repo: 'main', base: 'docs', pages };
+  expect(rewriteLink('../benchmarks/llm/results/archive/2026-05-16/report.md', 'llm-providers.md', docs)).toBe('/benchmarks/llm/archive/2026-05-16/');
+  expect(rewriteLink('../benchmarks/llm/results/report_assets/pareto.svg', 'llm-providers.md', docs)).toBe('https://github.com/ttlequals0/MinusPod/blob/main/benchmarks/llm/results/report_assets/pareto.svg');
   const index = renderPage(archiveIndex(['2026-08-23', '2026-05-16']), 'benchmarks/llm/archive/index.md');
   expect(index).toContain('slug: benchmarks/llm/archive');
   expect(index).toContain('  label: "Overview"');
@@ -228,10 +233,27 @@ test('a docs page link to the benchmark directory lands on the benchmark page', 
 });
 
 test('referenced images are collected for copying and a missing same-page anchor is unlinked', () => {
-  const assets = new Set();
+  const assets = new Map();
   const src = '# R\n\n## Key\n\nSee [Key](#key) and [Gone](#gone).\n\n![Chart](charts/pareto.png)\n';
   const page = transformMarkdown(src, 'benchmark/results/report.md', [], bench('jev', 'benchmarks/jev/results', { assets }));
   expect(page.body).toContain('[Key](#key) and Gone.');
   expect(page.body).toContain('![Chart](/benchmarks/jev/results/charts/pareto.png)');
-  expect([...assets]).toEqual(['benchmark/results/charts/pareto.png']);
+  expect([...assets]).toEqual([['benchmark/results/charts/pareto.png', '/benchmarks/jev/results/charts/pareto.png']]);
+});
+
+test('a missing same-page anchor in raw HTML stays as written', () => {
+  const page = transformMarkdown('# R\n\n<a href="#gone">Gone</a>\n', 'benchmark/README.md', [], bench('jev', 'benchmarks/jev'));
+  expect(page.body).toContain('<a href="#gone">Gone</a>');
+});
+
+test('a link that climbs out of the repo becomes plain text and is reported', () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const page = transformMarkdown('# R\n\nSee [`constants.py`](../../src/utils/constants.py).\n', 'benchmark/README.md', [], bench('jev', 'benchmarks/jev'));
+  expect(page.body).toContain('See `constants.py`.');
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining('leaves the repo'));
+  warn.mockRestore();
+});
+
+test('a missing archive directory yields no dates', () => {
+  expect(archiveDates('/nonexistent/archive')).toEqual([]);
 });

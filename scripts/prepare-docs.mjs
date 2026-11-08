@@ -5,7 +5,7 @@ import { jevDir, mainDir, repoRoot } from './lib/main-dir.mjs';
 import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, describeText } from './lib/md.mjs';
 import { videoIndex } from './lib/videos.mjs';
 import { apiPages } from './lib/openapi-md.mjs';
-import { ARCHIVE_DIR, ARCHIVE_SLUG, BENCHMARK_PAGES } from '../shared/benchmark-pages.mjs';
+import { ARCHIVE_DIR, ARCHIVE_SLUG, BENCHMARK_PAGES, RESULTS_SLUG } from '../shared/benchmark-pages.mjs';
 import { parse as parseYaml } from 'yaml';
 
 const GH = 'https://github.com/ttlequals0/MinusPod';
@@ -30,17 +30,25 @@ const IMAGE = /\.(svg|png|jpe?g|webp|gif)$/i;
 
 // Dated report directories under results/archive, newest first.
 export const archiveDates = (dir) =>
-  readdirSync(dir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && existsSync(join(dir, e.name, 'report.md')))
-    .map((e) => e.name)
-    .sort()
-    .reverse();
+  existsSync(dir)
+    ? readdirSync(dir, { withFileTypes: true })
+        .filter((e) => e.isDirectory() && existsSync(join(dir, e.name, 'report.md')))
+        .map((e) => e.name)
+        .sort()
+        .reverse()
+    : [];
 
 export const archivePages = (dates) =>
   Object.fromEntries(
     dates.map((date, i) => [
       `${ARCHIVE_DIR}/${date}/report.md`,
-      { slug: `${ARCHIVE_SLUG}/${date}`, title: `LLM benchmark results, ${date}`, long: true, sidebar: { label: date, order: i + 1 } },
+      {
+        slug: `${ARCHIVE_SLUG}/${date}`,
+        title: `LLM benchmark results, ${date}`,
+        description: `The LLM benchmark run of ${date}: accuracy, cost, latency and JSON compliance per model.`,
+        long: true,
+        sidebar: { label: date, order: i + 1 },
+      },
     ]),
   );
 
@@ -52,7 +60,7 @@ export const archiveIndex = (dates) => ({
     slug: ARCHIVE_SLUG,
     sidebar: { label: 'Overview', order: 0 },
   },
-  body: `The current run is on the [results page](/benchmarks/llm/results/).\n\n${dates.map((d) => `- [${d}](/${ARCHIVE_SLUG}/${d}/)`).join('\n')}\n`,
+  body: `The current run is on the [results page](/${RESULTS_SLUG}/).\n\n${dates.map((d) => `- [${d}](/${ARCHIVE_SLUG}/${d}/)`).join('\n')}\n`,
 });
 
 export function rewriteLink(href, fromRel, source = DOCS) {
@@ -64,13 +72,20 @@ export function rewriteLink(href, fromRel, source = DOCS) {
   const fragment = hash === -1 ? '' : href.slice(hash);
   if (!path) return href;
   const repoPath = posix.normalize(posix.join(source.base, posix.dirname(fromRel), path));
+  // a link that climbs out of the repo (copied from another repo's layout) becomes plain text
+  if (repoPath.startsWith('../')) {
+    console.warn(`prepare-docs: ${fromRel}: link ${href} leaves the repo`);
+    return null;
+  }
   const { gh, assetRoot, publicRoot } = REPOS[source.repo];
 
   const page = source.pages[source.repo][repoPath.endsWith('/') ? `${repoPath}README.md` : repoPath];
   if (page) return `/${page.slug}/${fragment}`;
-  if (IMAGE.test(repoPath) && repoPath.startsWith(assetRoot)) {
-    source.assets?.add(repoPath);
-    return `${publicRoot}${repoPath.slice(assetRoot.length)}${fragment}`;
+  // benchmark pages collect the images they show (repo path -> public path) for copying
+  if (source.assets && IMAGE.test(repoPath) && repoPath.startsWith(assetRoot)) {
+    const publicPath = `${publicRoot}${repoPath.slice(assetRoot.length)}`;
+    source.assets.set(repoPath, publicPath);
+    return `${publicPath}${fragment}`;
   }
   if (source.repo !== 'main') return `${gh}/${repoPath.endsWith('/') ? 'tree' : 'blob'}/main/${repoPath}${fragment}`;
 
@@ -113,7 +128,8 @@ const rewriteLinks = (text, fromRel, source) =>
 
 const rewriteAttrs = (text, fromRel, source) =>
   text.replace(ATTR_RE, (m, attr, val) => {
-    const next = attr === 'srcset' ? mapSrcset(val, (u) => rewriteLink(u, fromRel, source)) : rewriteLink(val, fromRel, source);
+    const link = (u) => rewriteLink(u, fromRel, source) ?? u;
+    const next = attr === 'srcset' ? mapSrcset(val, link) : link(val);
     return `${attr}="${next}"`;
   });
 
@@ -186,7 +202,8 @@ export function transformMarkdown(src, fromRel, videos = [], source = DOCS) {
     return line;
   });
 
-  // Links can wrap across lines, so rewrite whole non-fenced runs.
+  // Links can wrap across lines, so rewrite whole non-fenced runs. Benchmark pages (not under
+  // docs/) lose same-page links to headings they lack; docs pages keep them for check-dist to report.
   if (source.base === '') source = { ...source, anchors: slugs };
   const rewritten = [];
   for (let i = 0; i < out.length; ) {
@@ -236,9 +253,11 @@ if (isMain(import.meta.url)) {
   const videos = videoIndex(readFileSync(join(docsDir, 'videos/README.md'), 'utf8'));
 
   resetDir(outDir);
+  const dates = archiveDates(join(main, ARCHIVE_DIR));
+  const pages = { main: { ...BENCHMARK_PAGES.main, ...archivePages(dates) }, jev: BENCHMARK_PAGES.jev };
   const files = listMarkdown(docsDir);
   for (const rel of files) {
-    const page = transformMarkdown(readFileSync(join(docsDir, rel), 'utf8'), rel, videos);
+    const page = transformMarkdown(readFileSync(join(docsDir, rel), 'utf8'), rel, videos, { ...DOCS, pages });
     const out = outputPath(rel);
     const dest = join(outDir, out);
     mkdirSync(dirname(dest), { recursive: true });
@@ -252,13 +271,11 @@ if (isMain(import.meta.url)) {
   }
 
   // benchmark pages from both repos, with the images they reference
-  const dates = archiveDates(join(main, ARCHIVE_DIR));
-  const pages = { main: { ...BENCHMARK_PAGES.main, ...archivePages(dates) }, jev: BENCHMARK_PAGES.jev };
   rmSync(join(root, 'docs/public/benchmarks'), { recursive: true, force: true });
   let benchmarkPages = 0;
   for (const [repo, dir] of [['main', main], ['jev', jevDir()]]) {
     for (const [repoPath, cfg] of Object.entries(pages[repo])) {
-      const assets = new Set();
+      const assets = new Map();
       const page = transformMarkdown(readFileSync(join(dir, repoPath), 'utf8'), repoPath, [], { repo, base: '', slug: cfg.slug, pages, assets });
       page.frontmatter.title = cfg.title;
       if (cfg.description) page.frontmatter.description = cfg.description;
@@ -268,13 +285,14 @@ if (isMain(import.meta.url)) {
       mkdirSync(dirname(join(outDir, out)), { recursive: true });
       writeFileSync(join(outDir, out), renderPage(page, out));
       benchmarkPages++;
-      for (const asset of assets) {
-        const dest = join(root, 'docs/public', REPOS[repo].publicRoot.slice(1), asset.slice(REPOS[repo].assetRoot.length));
+      for (const [asset, publicPath] of assets) {
+        const dest = join(root, 'docs/public', publicPath);
         mkdirSync(dirname(dest), { recursive: true });
         cpSync(join(dir, asset), dest);
       }
     }
   }
+  mkdirSync(join(outDir, ARCHIVE_SLUG), { recursive: true });
   writeFileSync(join(outDir, `${ARCHIVE_SLUG}/index.md`), renderPage(archiveIndex(dates), `${ARCHIVE_SLUG}/index.md`));
 
   // the app serves its spec with the running version; the docs copy carries the release it was built from
