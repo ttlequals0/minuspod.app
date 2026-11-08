@@ -3,6 +3,7 @@ import starlight from '@astrojs/starlight';
 import { existsSync, readFileSync } from 'node:fs';
 import { beaconToken } from '../shared/beacon.mjs';
 import { presentPages } from '../shared/sidebar.mjs';
+import { benchmarkSidebar } from '../shared/benchmark-pages.mjs';
 import { SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_URL, hasSocialImage } from '../shared/social.mjs';
 
 function beaconHead() {
@@ -77,6 +78,7 @@ export const SIDEBAR = presentPages([
     ],
   },
   { label: 'Reference', items: [{ slug: 'glossary', label: 'Glossary' }] },
+  benchmarkSidebar(),
   {
     label: 'Contributing',
     items: [

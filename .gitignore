@@ -40,8 +40,10 @@ landing/public/screenshots/
 # OS
 .DS_Store
 
-# Main repo checkout and generated assets
+# Source repo checkouts and generated assets
 .main/
+.jev/
+docs/public/benchmarks/
 docs/public/images/
 docs/public/screenshots/
 docs/public/schemas/

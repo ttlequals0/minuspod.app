@@ -1,13 +1,15 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
 import { isMain, resetDir } from './lib/cli.mjs';
-import { mainDir, repoRoot } from './lib/main-dir.mjs';
+import { jevDir, mainDir, repoRoot } from './lib/main-dir.mjs';
 import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, describeText } from './lib/md.mjs';
 import { videoIndex } from './lib/videos.mjs';
 import { apiPages } from './lib/openapi-md.mjs';
+import { ARCHIVE_DIR, ARCHIVE_SLUG, BENCHMARK_PAGES, RESULTS_SLUG } from '../shared/benchmark-pages.mjs';
 import { parse as parseYaml } from 'yaml';
 
 const GH = 'https://github.com/ttlequals0/MinusPod';
+const GH_JEV = 'https://github.com/ttlequals0/MinusPodJev';
 const STATIC_DIRS = ['images', 'screenshots', 'schemas', 'examples'];
 // Sidebar frontmatter by output path relative to the docs content dir.
 const SIDEBAR_OVERRIDES = { 'specs/index.md': { label: 'Overview', order: 0 } };
@@ -17,13 +19,75 @@ const THEMED_PICTURE = /<picture>\s*<source\b([^>]*)>\s*<img\b([^>]*?)\s*\/?>\s*
 // Lowercased page path without .md; a trailing README names its directory.
 const pageKey = (rel) => rel.slice(0, -3).toLowerCase().replace(/(^|\/)readme$/, '');
 
-export function rewriteLink(href, fromRel) {
-  if (isExternalHref(href) || href.startsWith('#')) return href;
+// Where a page comes from: the repo, the directory its relative path is under, the page table
+// for cross-links, and its slug when it does not follow from the path. Docs pages are the default.
+const REPOS = {
+  main: { gh: GH, assetRoot: 'benchmarks/', publicRoot: '/benchmarks/' },
+  jev: { gh: GH_JEV, assetRoot: 'benchmark/', publicRoot: '/benchmarks/jev/' },
+};
+const DOCS = { repo: 'main', base: 'docs', pages: BENCHMARK_PAGES };
+const IMAGE = /\.(svg|png|jpe?g|webp|gif)$/i;
+
+// Dated report directories under results/archive, newest first.
+export const archiveDates = (dir) =>
+  existsSync(dir)
+    ? readdirSync(dir, { withFileTypes: true })
+        .filter((e) => e.isDirectory() && existsSync(join(dir, e.name, 'report.md')))
+        .map((e) => e.name)
+        .sort()
+        .reverse()
+    : [];
+
+export const archivePages = (dates) =>
+  Object.fromEntries(
+    dates.map((date, i) => [
+      `${ARCHIVE_DIR}/${date}/report.md`,
+      {
+        slug: `${ARCHIVE_SLUG}/${date}`,
+        title: `LLM benchmark results, ${date}`,
+        description: `The LLM benchmark run of ${date}: accuracy, cost, latency and JSON compliance per model.`,
+        long: true,
+        sidebar: { label: date, order: i + 1 },
+      },
+    ]),
+  );
+
+// The archive group needs an index page; the dated reports are generated upstream without one.
+export const archiveIndex = (dates) => ({
+  frontmatter: {
+    title: 'Past LLM benchmark runs',
+    description: 'Earlier runs of the LLM benchmark, newest first.',
+    slug: ARCHIVE_SLUG,
+    sidebar: { label: 'Overview', order: 0 },
+  },
+  body: `The current run is on the [results page](/${RESULTS_SLUG}/).\n\n${dates.map((d) => `- [${d}](/${ARCHIVE_SLUG}/${d}/)`).join('\n')}\n`,
+});
+
+export function rewriteLink(href, fromRel, source = DOCS) {
+  if (isExternalHref(href)) return href;
+  // a same-page link whose heading is missing (old generated reports) becomes plain text
+  if (href.startsWith('#')) return source.anchors && !source.anchors.has(href.slice(1)) ? null : href;
   const hash = href.indexOf('#');
   const path = hash === -1 ? href : href.slice(0, hash);
   const fragment = hash === -1 ? '' : href.slice(hash);
   if (!path) return href;
-  const repoPath = posix.normalize(posix.join('docs', posix.dirname(fromRel), path));
+  const repoPath = posix.normalize(posix.join(source.base, posix.dirname(fromRel), path));
+  // a link that climbs out of the repo (copied from another repo's layout) becomes plain text
+  if (repoPath.startsWith('../')) {
+    console.warn(`prepare-docs: ${fromRel}: link ${href} leaves the repo`);
+    return null;
+  }
+  const { gh, assetRoot, publicRoot } = REPOS[source.repo];
+
+  const page = source.pages[source.repo][repoPath.endsWith('/') ? `${repoPath}README.md` : repoPath];
+  if (page) return `/${page.slug}/${fragment}`;
+  // benchmark pages collect the images they show (repo path -> public path) for copying
+  if (source.assets && IMAGE.test(repoPath) && repoPath.startsWith(assetRoot)) {
+    const publicPath = `${publicRoot}${repoPath.slice(assetRoot.length)}`;
+    source.assets.set(repoPath, publicPath);
+    return `${publicPath}${fragment}`;
+  }
+  if (source.repo !== 'main') return `${gh}/${repoPath.endsWith('/') ? 'tree' : 'blob'}/main/${repoPath}${fragment}`;
 
   if (repoPath.startsWith('docs/')) {
     const rel = repoPath.slice('docs/'.length);
@@ -55,16 +119,17 @@ function pickVideo(videos, fromRel, headingSlugNow) {
 const videoElement = (name) =>
   `<video controls preload="none" playsinline poster="https://minuspod.app/videos/${name}-landscape.jpg" src="https://minuspod.app/videos/minuspod-${name}-landscape.mp4"></video>`;
 
-const rewriteLinks = (text, fromRel) =>
-  text.replace(
-    LINK_RE,
-    (m, bang, label, href, title = '') =>
-      `${bang}[${rewriteLinks(label, fromRel)}](${rewriteLink(href, fromRel)}${title})`,
-  );
+const rewriteLinks = (text, fromRel, source) =>
+  text.replace(LINK_RE, (m, bang, label, href, title = '') => {
+    const target = rewriteLink(href, fromRel, source);
+    const inner = rewriteLinks(label, fromRel, source);
+    return target === null ? inner : `${bang}[${inner}](${target}${title})`;
+  });
 
-const rewriteAttrs = (text, fromRel) =>
+const rewriteAttrs = (text, fromRel, source) =>
   text.replace(ATTR_RE, (m, attr, val) => {
-    const next = attr === 'srcset' ? mapSrcset(val, (u) => rewriteLink(u, fromRel)) : rewriteLink(val, fromRel);
+    const link = (u) => rewriteLink(u, fromRel, source) ?? u;
+    const next = attr === 'srcset' ? mapSrcset(val, link) : link(val);
     return `${attr}="${next}"`;
   });
 
@@ -78,9 +143,9 @@ const splitThemedPictures = (text) =>
     return `<img${light}>\n<img ${alt} src="${dark[1]}" class="light:sl-hidden">`;
   });
 
-const rewriteRun = (text, fromRel) => rewriteAttrs(rewriteLinks(splitThemedPictures(text), fromRel), fromRel);
+const rewriteRun = (text, fromRel, source) => rewriteAttrs(rewriteLinks(splitThemedPictures(text), fromRel, source), fromRel, source);
 
-export function transformMarkdown(src, fromRel, videos = []) {
+export function transformMarkdown(src, fromRel, videos = [], source = DOCS) {
   const lines = src.split('\n');
   const fenced = fenceMask(lines);
   const h1 = firstH1(lines, fenced);
@@ -104,7 +169,7 @@ export function transformMarkdown(src, fromRel, videos = []) {
     return targets.length > 0 && targets.every((t) => t.startsWith('#'));
   };
   lines.forEach((l, i) => {
-    if (fenced[i] || !/^##\s+Contents\s*$/.test(l) || drop.has(i)) return;
+    if (fenced[i] || !/^##\s+(Contents|Table of Contents)\s*$/.test(l) || drop.has(i)) return;
     let end = i + 1;
     while (end < lines.length && !(!fenced[end] && /^#{1,6}\s/.test(lines[end])) && (!lines[end].trim() || (!fenced[end] && isTocItem(lines[end])))) end++;
     if (lines.slice(i + 1, end).some((l) => l.trim())) {
@@ -116,7 +181,7 @@ export function transformMarkdown(src, fromRel, videos = []) {
 
   const description = describeText(firstParagraph(body.map((l) => l.text), body.map((l) => l.fenced)));
   const frontmatter = { title: h1?.text ?? '', description };
-  const slug = pageKey(fromRel);
+  const slug = source.slug ?? pageKey(fromRel);
   if (slug) frontmatter.slug = slug;
 
   let heading = '';
@@ -137,13 +202,15 @@ export function transformMarkdown(src, fromRel, videos = []) {
     return line;
   });
 
-  // Links can wrap across lines, so rewrite whole non-fenced runs.
+  // Links can wrap across lines, so rewrite whole non-fenced runs. Benchmark pages (not under
+  // docs/) lose same-page links to headings they lack; docs pages keep them for check-dist to report.
+  if (source.base === '') source = { ...source, anchors: slugs };
   const rewritten = [];
   for (let i = 0; i < out.length; ) {
     let j = i;
     while (j < out.length && body[j].fenced === body[i].fenced) j++;
     const run = out.slice(i, j).join('\n');
-    rewritten.push(body[i].fenced ? run : rewriteRun(run, fromRel));
+    rewritten.push(body[i].fenced ? run : rewriteRun(run, fromRel, source));
     i = j;
   }
 
@@ -186,9 +253,11 @@ if (isMain(import.meta.url)) {
   const videos = videoIndex(readFileSync(join(docsDir, 'videos/README.md'), 'utf8'));
 
   resetDir(outDir);
+  const dates = archiveDates(join(main, ARCHIVE_DIR));
+  const pages = { main: { ...BENCHMARK_PAGES.main, ...archivePages(dates) }, jev: BENCHMARK_PAGES.jev };
   const files = listMarkdown(docsDir);
   for (const rel of files) {
-    const page = transformMarkdown(readFileSync(join(docsDir, rel), 'utf8'), rel, videos);
+    const page = transformMarkdown(readFileSync(join(docsDir, rel), 'utf8'), rel, videos, { ...DOCS, pages });
     const out = outputPath(rel);
     const dest = join(outDir, out);
     mkdirSync(dirname(dest), { recursive: true });
@@ -200,6 +269,31 @@ if (isMain(import.meta.url)) {
     rmSync(dest, { recursive: true, force: true });
     if (existsSync(join(docsDir, name))) cpSync(join(docsDir, name), dest, { recursive: true });
   }
+
+  // benchmark pages from both repos, with the images they reference
+  rmSync(join(root, 'docs/public/benchmarks'), { recursive: true, force: true });
+  let benchmarkPages = 0;
+  for (const [repo, dir] of [['main', main], ['jev', jevDir()]]) {
+    for (const [repoPath, cfg] of Object.entries(pages[repo])) {
+      const assets = new Map();
+      const page = transformMarkdown(readFileSync(join(dir, repoPath), 'utf8'), repoPath, [], { repo, base: '', slug: cfg.slug, pages, assets });
+      page.frontmatter.title = cfg.title;
+      if (cfg.description) page.frontmatter.description = cfg.description;
+      if (cfg.long) page.frontmatter.tableOfContents = true;
+      if (cfg.sidebar) page.frontmatter.sidebar = cfg.sidebar;
+      const out = `${cfg.slug}.md`;
+      mkdirSync(dirname(join(outDir, out)), { recursive: true });
+      writeFileSync(join(outDir, out), renderPage(page, out));
+      benchmarkPages++;
+      for (const [asset, publicPath] of assets) {
+        const dest = join(root, 'docs/public', publicPath);
+        mkdirSync(dirname(dest), { recursive: true });
+        cpSync(join(dir, asset), dest);
+      }
+    }
+  }
+  mkdirSync(join(outDir, ARCHIVE_SLUG), { recursive: true });
+  writeFileSync(join(outDir, `${ARCHIVE_SLUG}/index.md`), renderPage(archiveIndex(dates), `${ARCHIVE_SLUG}/index.md`));
 
   // the app serves its spec with the running version; the docs copy carries the release it was built from
   const version = /__version__ = "([^"]+)"/.exec(readFileSync(join(main, 'version.py'), 'utf8'))?.[1];
@@ -217,5 +311,5 @@ if (isMain(import.meta.url)) {
   for (const f of ['logo.svg', 'logo-dark.svg']) cpSync(join(main, 'frontend/public', f), join(assets, f));
   cpSync(join(main, 'frontend/public/favicon.svg'), join(root, 'docs/public/favicon.svg'));
 
-  console.log(`prepare-docs: wrote ${files.length} pages and ${api.length} API reference pages`);
+  console.log(`prepare-docs: wrote ${files.length} pages, ${benchmarkPages + 1} benchmark pages and ${api.length} API reference pages`);
 }

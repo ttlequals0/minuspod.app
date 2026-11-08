@@ -36,6 +36,12 @@ jobs:
           ref: main
           path: .main
           fetch-depth: 1
+      - uses: actions/checkout@v5
+        with:
+          repository: ttlequals0/MinusPodJev
+          ref: main
+          path: .jev
+          fetch-depth: 1
       - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
