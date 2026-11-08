@@ -68,6 +68,8 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
+          IFS=, read -ra hosts <<< "${DEMO_LEAK_HOSTS:-}"
+          for h in "${hosts[@]}"; do h="${h//[[:space:]]/}"; [ -n "$h" ] && echo "::add-mask::$h"; done
           db=(snapshot/demo-snapshot-*.db)
           [ "${#db[@]}" -eq 1 ] || { echo "expected one demo-snapshot-*.db asset, found ${#db[@]}" >&2; exit 1; }
           export SNAPSHOT_DB="$PWD/${db[0]}"
