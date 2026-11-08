@@ -6,5 +6,8 @@
   Cache-Control: public, max-age=31536000, immutable
 /demo/fixtures/*
   Cache-Control: public, max-age=3600
+/feeds-xml/*
+  X-Robots-Tag: noindex, nofollow
+  Content-Type: application/xml; charset=utf-8
 /*
   X-Robots-Tag: noindex, nofollow

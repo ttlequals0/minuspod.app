@@ -110,17 +110,30 @@ slugs="$(curl -fsS "$BASE/api/v1/feeds?includeLatestEpisodes=false" \
 [ -n "$slugs" ] || { echo "no feeds returned for the feed XML step" >&2; exit 1; }
 count=0
 while IFS= read -r slug; do
-  status="$(curl -sS -o "$WORK/feeds-xml/$slug.xml" -w '%{http_code}' "$BASE/$slug")"
+  status="$(curl -sS -o "$WORK/feeds-xml/$slug.xml" -w '%{http_code}' "$BASE/$slug")" || status=000
   [ "$status" = 200 ] || { echo "feed XML for $slug returned HTTP $status" >&2; exit 1; }
+  sed -E -i 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/demo@example.invalid/g' "$WORK/feeds-xml/$slug.xml"
   count=$((count + 1))
 done <<< "$slugs"
+printf '%s\n' "$slugs" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read().split()))" > "$WORK/feeds-xml/index.json"
+if [ -n "$DEMO_LEAK_HOSTS" ]; then
+  IFS=, read -ra leak_hosts <<< "$DEMO_LEAK_HOSTS"
+  for host in "${leak_hosts[@]}"; do
+    [ -n "$host" ] || continue
+    for f in "$WORK"/feeds-xml/*.xml; do
+      ! grep -qiF -- "$host" "$f" || { echo "feed XML $(basename "$f") mentions a protected host" >&2; exit 1; }
+    done
+  done
+else
+  echo "DEMO_LEAK_HOSTS is empty: skipping the feed XML host check"
+fi
 echo "feed XML files: $count"
 echo "::endgroup::"
 
 echo "::group::Leak check"
 cd "$MAIN_DIR"
 PYTHONPATH=src:. python3 scripts/demo/leak_check.py --hosts "$DEMO_LEAK_HOSTS" \
-  --sqlite "$WORK/data/podcast.db" "$WORK/fixtures" "$MAIN_DIR/frontend/demo/artwork" "$WORK/search-index.json" "$WORK/feeds-xml"
+  --sqlite "$WORK/data/podcast.db" "$WORK/fixtures" "$MAIN_DIR/frontend/demo/artwork" "$WORK/search-index.json"
 echo "::endgroup::"
 
 if [ "${SKIP_BUILD:-}" = 1 ]; then
@@ -140,5 +153,5 @@ rm -rf demo/dist
 cp -r "$MAIN_DIR/frontend/dist-demo" demo/dist
 cp demo/public/_headers demo/dist/_headers
 mkdir -p demo/dist/feeds-xml
-cp "$WORK"/feeds-xml/*.xml demo/dist/feeds-xml/
+cp "$WORK"/feeds-xml/*.xml "$WORK/feeds-xml/index.json" demo/dist/feeds-xml/
 echo "::endgroup::"
