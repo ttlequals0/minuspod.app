@@ -4,30 +4,35 @@ interface Props {
   title: string;
   seconds: number;
   description?: string;
+  caption?: boolean;
 }
 
-const { name, title, seconds, description } = Astro.props;
+const { name, title, seconds, description, caption = true } = Astro.props;
 const min = Math.floor(seconds / 60);
 const sec = seconds % 60;
 const length = min ? `${min} min ${sec} s` : `${sec} s`;
 const base = `/videos/minuspod-${name}`;
+// without a caption the poster carries the text instead
+const alt = caption ? '' : [title, description, length].filter(Boolean).map((t) => t.replace(/\.$/, '')).join('. ');
 ---
 
-<figure class="video-card" data-video-card data-name={name}>
+<figure class="video-card" data-video-card data-name={name} data-title={title}>
   <div class="frame">
     <picture>
       <source srcset={`/videos/${name}-portrait.jpg`} media="not all and (min-width: 768px)" />
-      <img src={`/videos/${name}-landscape.jpg`} alt="" width="1920" height="1080" loading="lazy" />
+      <img src={`/videos/${name}-landscape.jpg`} alt={alt} width="1920" height="1080" loading="lazy" />
     </picture>
     <a class="play" href={`${base}-landscape.mp4`} aria-label={`Play ${title}`}>
       <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
     </a>
   </div>
-  <figcaption>
-    <h3>{title}</h3>
-    {description && <p>{description}</p>}
-    <p class="length">{length}</p>
-  </figcaption>
+  {caption && (
+    <figcaption>
+      <h3>{title}</h3>
+      {description && <p>{description}</p>}
+      <p class="length">{length}</p>
+    </figcaption>
+  )}
 </figure>
 
 <script>
@@ -46,7 +51,7 @@ const base = `/videos/minuspod-${name}`;
       if (img?.naturalWidth) video.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
       // iOS never loads a preload=none video built from <source> children; set src directly
       video.src = wide ? play.href : play.href.replace(/-landscape\.mp4$/, '.mp4');
-      video.setAttribute('aria-label', card.querySelector('h3')?.textContent ?? '');
+      video.setAttribute('aria-label', card.dataset.title ?? '');
       card.querySelector('.frame')?.replaceChildren(video);
       video.focus();
       video.play().catch((err) => console.warn('video play failed', err));
