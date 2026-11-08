@@ -39,11 +39,19 @@
   font-weight: 600;
 }
 
+/* Starlight paints the mobile menu button with the text color (and the background color in light
+   mode) inside its cascade layer; this unlayered rule gives it the nav surface so it follows the theme. */
 .sl-menu-button {
   align-items: center;
   justify-content: center;
   border-radius: 4px;
+  border: 1px solid hsl(var(--muted));
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
   box-shadow: none;
+}
+.sl-menu-button:has(~ :popover-open) {
+  background-color: hsl(var(--muted));
 }
 
 @media (pointer: coarse) {
