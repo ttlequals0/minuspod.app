@@ -4,6 +4,8 @@ import { isMain, resetDir } from './lib/cli.mjs';
 import { mainDir, repoRoot } from './lib/main-dir.mjs';
 import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, truncateWords } from './lib/md.mjs';
 import { videoIndex } from './lib/videos.mjs';
+import { apiPages } from './lib/openapi-md.mjs';
+import { parse as parseYaml } from 'yaml';
 
 const GH = 'https://github.com/ttlequals0/MinusPod';
 const STATIC_DIRS = ['images', 'screenshots', 'schemas', 'examples'];
@@ -34,7 +36,9 @@ export function rewriteLink(href, fromRel) {
   } else if (repoPath === 'README.md') {
     return `${GH}#readme`;
   } else if (repoPath === 'openapi.yaml') {
-    return 'https://demo.minuspod.app/api-docs/';
+    // the spec is rendered as the API reference; a schema pointer lands on its heading
+    const schema = /^#\/components\/schemas\/([^/]+)$/.exec(fragment);
+    return schema ? `/api/schemas/#${headingSlug(schema[1])}` : '/api/';
   }
   return `${GH}/${repoPath.endsWith('/') ? 'tree' : 'blob'}/main/${repoPath}${fragment}`;
 }
@@ -157,8 +161,10 @@ export function transformMarkdown(src, fromRel, videos = []) {
 export const renderPage = ({ frontmatter, body }, outPath = '') => {
   const fm = [`title: ${JSON.stringify(frontmatter.title)}`, `description: ${JSON.stringify(frontmatter.description)}`];
   if (frontmatter.slug !== undefined) fm.push(`slug: ${frontmatter.slug}`);
-  const sidebar = SIDEBAR_OVERRIDES[outPath];
-  if (sidebar) fm.push(`sidebar:\n  label: ${sidebar.label}\n  order: ${sidebar.order}`);
+  const sidebar = frontmatter.sidebar ?? SIDEBAR_OVERRIDES[outPath];
+  if (sidebar) fm.push('sidebar:', ...Object.entries(sidebar).map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`));
+  // long reference pages: only the h2 per endpoint or schema in the table of contents
+  if (frontmatter.tableOfContents) fm.push('tableOfContents:\n  minHeadingLevel: 2\n  maxHeadingLevel: 2');
   return `---\n${fm.join('\n')}\n---\n\n${body.replace(/^\s*\n/, '')}`;
 };
 
@@ -198,12 +204,18 @@ if (isMain(import.meta.url)) {
   // the app serves its spec with the running version; the docs copy carries the release it was built from
   const version = /__version__ = "([^"]+)"/.exec(readFileSync(join(main, 'version.py'), 'utf8'))?.[1];
   if (!version) throw new Error('prepare-docs: no __version__ in version.py');
-  writeFileSync(join(root, 'docs/public/openapi.yaml'), readFileSync(join(main, 'openapi.yaml'), 'utf8').replace(/^  version: .*$/m, `  version: ${version}`));
+  const specText = readFileSync(join(main, 'openapi.yaml'), 'utf8').replace(/^  version: .*$/m, `  version: ${version}`);
+  writeFileSync(join(root, 'docs/public/openapi.yaml'), specText);
+  const spec = parseYaml(specText);
+  writeFileSync(join(root, 'docs/public/openapi.json'), JSON.stringify(spec, null, 2) + '\n');
+  const api = apiPages(spec, version);
+  mkdirSync(join(outDir, 'api'), { recursive: true });
+  for (const page of api) writeFileSync(join(outDir, page.path), renderPage(page, page.path));
 
   const assets = join(root, 'docs/src/assets/generated');
   mkdirSync(assets, { recursive: true });
   for (const f of ['logo.svg', 'logo-dark.svg']) cpSync(join(main, 'frontend/public', f), join(assets, f));
   cpSync(join(main, 'frontend/public/favicon.svg'), join(root, 'docs/public/favicon.svg'));
 
-  console.log(`prepare-docs: wrote ${files.length} pages`);
+  console.log(`prepare-docs: wrote ${files.length} pages and ${api.length} API reference pages`);
 }

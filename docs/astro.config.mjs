@@ -58,7 +58,7 @@ export const SIDEBAR = [
       { slug: 'api-and-webhooks', label: 'API and webhooks' },
       { slug: 'podcasting-2.0', label: 'Podcasting 2.0' },
       { slug: 'configuration-import-export', label: 'Configuration import and export' },
-      { label: 'API reference', link: 'https://demo.minuspod.app/api-docs/' },
+      { label: 'API reference', items: [{ autogenerate: { directory: 'api' } }] },
     ],
   },
   {
