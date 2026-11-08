@@ -22,6 +22,7 @@
     "deploy:landing": "npm run generate && npm run build -w landing && wrangler deploy --config landing/wrangler.jsonc"
   },
   "devDependencies": {
+    "@fontsource/roboto": "5.3.0",
     "vitest": "^5.1.0",
     "wrangler": "^4.158.0",
     "yaml": "^2.9.1"

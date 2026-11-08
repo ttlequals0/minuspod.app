@@ -99,17 +99,11 @@ export default defineConfig({
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/ttlequals0/MinusPod' },
       ],
-      customCss: ['./src/styles/theme.css'],
+      customCss: [
+        ...[400, 500, 600, 700].map((w) => `@fontsource/roboto/${w}.css`),
+        './src/styles/theme.css',
+      ],
       head: [
-        { tag: 'link', attrs: { rel: 'preconnect', href: 'https://fonts.googleapis.com' } },
-        { tag: 'link', attrs: { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: true } },
-        {
-          tag: 'link',
-          attrs: {
-            rel: 'stylesheet',
-            href: 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap',
-          },
-        },
         ...beaconHead(),
       ],
       sidebar: SIDEBAR,
