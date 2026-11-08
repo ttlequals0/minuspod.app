@@ -9,6 +9,7 @@ Content comes from a checkout of the MinusPod main repo, which is never committe
 - `landing/`: Astro landing page
 - `scripts/`: prepare scripts, the main checkout helper, and the dist checker
 - `.main/`: shallow clone of MinusPod main (gitignored)
+- `.jev/`: shallow clone of MinusPodJev main, the source of the Jev benchmark pages (gitignored)
 - `shared/theme/`: the theme picker both sites use (cookie store, inline bootstrap, picker wiring)
 - `shared/generated/`: `npm run generate` output (gitignored), `tokens.css` with every pair from the app's `themes.ts` plus the `themes.json` the pickers render from
 
@@ -35,10 +36,10 @@ is missing:
 ## Local loop
 
 1. `npm install`
-2. `npm run fetch:main` clones or refreshes `.main/`
-3. `npm run build` generates content from `.main/` and builds both sites
+2. `npm run fetch:main` clones or refreshes `.main/` and `.jev/`
+3. `npm run build` generates content from both checkouts and builds both sites
 4. `npm test` runs the script tests
 
 Pushes to main, docs-updated dispatches and manual runs deploy both sites through `.github/workflows/site.yml`.
 
-To build against another checkout, run `MAIN_REPO_DIR=$HOME/repos/MinusPod npm run build`.
+To build against other checkouts, run `MAIN_REPO_DIR=$HOME/repos/MinusPod JEV_REPO_DIR=$HOME/repos/MinusPodJev npm run build`.

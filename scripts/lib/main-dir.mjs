@@ -11,3 +11,12 @@ export function mainDir() {
   }
   return dir;
 }
+
+// The Jev proxy repo carries its own benchmark, published under /benchmarks/jev/.
+export function jevDir() {
+  const dir = process.env.JEV_REPO_DIR || join(repoRoot, '.jev');
+  if (!existsSync(join(dir, 'benchmark', 'README.md'))) {
+    throw new Error(`MinusPodJev repo not found at ${dir}; run npm run fetch:main or set JEV_REPO_DIR`);
+  }
+  return dir;
+}

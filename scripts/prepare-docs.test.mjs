@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { listMarkdown, renderPage, rewriteLink, transformMarkdown } from './prepare-docs.mjs';
+import { addArchivePages, archiveIndex, BENCHMARK_PAGES, listMarkdown, renderPage, rewriteLink, transformMarkdown } from './prepare-docs.mjs';
 import { parseVideoTable, videoIndex } from './lib/videos.mjs';
 import { headingSlug, mapSrcset } from './lib/md.mjs';
 
@@ -182,4 +182,42 @@ test('renderPage writes sidebar and table of contents frontmatter when a page ca
 test('frontmatter skips a spec metadata paragraph', () => {
   const src = '# Review Queue\n\nDate: 2026-07-12\nStatus: implemented in 2.44.0\n\nRejected detections wait in a review area.\n';
   expect(transformMarkdown(src, 'specs/review-queue.md').frontmatter.description).toBe('Rejected detections wait in a review area.');
+});
+
+const bench = (repo, slug) => ({ repo, base: '', slug });
+
+test.each([
+  ['report_assets/pareto.svg', 'benchmarks/llm/results/report.md', 'main', '/benchmarks/llm/results/report_assets/pareto.svg'],
+  ['../README.md', 'benchmarks/llm/data/README.md', 'main', '/benchmarks/llm/'],
+  ['data/README.md#format', 'benchmarks/llm/CONTRIBUTING.md', 'main', '/benchmarks/llm/data/#format'],
+  ['../../docs/llm-providers.md', 'benchmarks/llm/README.md', 'main', '/llm-providers/'],
+  ['../../src/utils/constants.py', 'benchmarks/llm/README.md', 'main', 'https://github.com/ttlequals0/MinusPod/blob/main/src/utils/constants.py'],
+  ['report_assets/pareto.svg', 'benchmark/results/report-combined.md', 'jev', '/benchmarks/jev/results/report_assets/pareto.svg'],
+  ['../results/raw/', 'benchmark/results/report-combined.md', 'jev', 'https://github.com/ttlequals0/MinusPodJev/tree/main/benchmark/results/raw/'],
+  ['#tldr', 'benchmark/results/report-combined.md', 'jev', '#tldr'],
+])('rewriteLink(%s from %s in %s)', (href, from, repo, expected) => {
+  expect(rewriteLink(href, from, bench(repo))).toBe(expected);
+});
+
+test('benchmark pages drop a Table of Contents and take the configured slug', () => {
+  const src = '# Report\n\n## Table of Contents\n\n- [Key](#key)\n- [Results](#results)\n\n## Key\n\nMetric notes.\n';
+  const page = transformMarkdown(src, 'benchmarks/llm/results/report.md', [], bench('main', 'benchmarks/llm/results'));
+  expect(page.frontmatter.slug).toBe('benchmarks/llm/results');
+  expect(page.body).not.toContain('Table of Contents');
+  expect(page.body).toContain('## Key');
+});
+
+test('archive reports are registered newest first and listed on an index page', () => {
+  addArchivePages(['2026-08-23', '2026-05-16']);
+  expect(BENCHMARK_PAGES.main['benchmarks/llm/results/archive/2026-08-23/report.md']).toEqual({
+    slug: 'benchmarks/llm/archive/2026-08-23',
+    title: 'LLM benchmark results, 2026-08-23',
+    long: true,
+    sidebar: { label: '2026-08-23', order: 1 },
+  });
+  expect(rewriteLink('archive/2026-05-16/report.md', 'benchmarks/llm/results/report.md', bench('main'))).toBe('/benchmarks/llm/archive/2026-05-16/');
+  const index = renderPage(archiveIndex(['2026-08-23', '2026-05-16']), 'benchmarks/llm/archive/index.md');
+  expect(index).toContain('slug: benchmarks/llm/archive');
+  expect(index).toContain('  label: "Overview"');
+  expect(index).toContain('- [2026-08-23](/benchmarks/llm/archive/2026-08-23/)');
 });
