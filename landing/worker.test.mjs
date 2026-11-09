@@ -32,6 +32,19 @@ describe('parseRange', () => {
 });
 
 describe('worker', () => {
+  it('redirects www to the https apex, keeping path and query', async () => {
+    const env = asset();
+    for (const from of ['https://www.minuspod.app/gallery/?v=1', 'http://www.minuspod.app/gallery/?v=1']) {
+      const res = await worker.fetch(new Request(from), { ASSETS: env });
+      expect(res.status).toBe(301);
+      expect(res.headers.get('Location')).toBe('https://minuspod.app/gallery/?v=1');
+    }
+    expect(env.seen).toHaveLength(0);
+  });
+  it('keeps a protocol-relative path on the apex host', async () => {
+    const res = await worker.fetch(new Request('https://www.minuspod.app//evil.example/x'), { ASSETS: asset() });
+    expect(res.headers.get('Location')).toBe('https://minuspod.app//evil.example/x');
+  });
   it('answers Accept: text/markdown with the twin and marks html pages', async () => {
     const env = {
       async fetch(req) {
