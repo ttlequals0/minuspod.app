@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { beaconToken } from '../shared/beacon.mjs';
 import { collapseGroups, presentPages } from '../shared/sidebar.mjs';
 import { REPO_URL } from '../shared/repo.mjs';
+import { SITE_NAME } from '../shared/social.mjs';
 import { benchmarkSidebar } from '../shared/benchmark-pages.mjs';
 import { SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_URL, hasSocialImage } from '../shared/social.mjs';
 
@@ -113,11 +114,12 @@ export default defineConfig({
         ThemeSelect: './src/components/ThemeSelect.astro',
         MarkdownContent: './src/components/MarkdownContent.astro',
       },
-      title: 'MinusPod',
+      title: SITE_NAME,
       logo: {
         light: './src/assets/generated/logo.svg',
         dark: './src/assets/generated/logo-dark.svg',
         replacesTitle: true,
+        alt: 'MinusPod',
       },
       social: [
         { icon: 'github', label: 'GitHub', href: REPO_URL },

@@ -12,7 +12,7 @@ interface Props {
 const { name, title, seconds, description, caption = true } = Astro.props;
 const length = formatLength(seconds);
 // without a caption the poster carries the text instead
-const alt = caption ? '' : [title, description, length].filter(Boolean).map((t) => t.replace(/\.$/, '')).join('. ');
+const alt = caption ? `Still from ${title}` : [title, description, length].filter(Boolean).map((t) => t.replace(/\.$/, '')).join('. ');
 ---
 
 <figure class="video-card" data-video-card data-name={name} data-title={title}>
