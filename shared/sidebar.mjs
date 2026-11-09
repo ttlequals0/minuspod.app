@@ -10,3 +10,7 @@ export function presentPages(items, hasPage) {
     return !item.slug || hasPage(item.slug) ? [item] : [];
   });
 }
+
+// Starlight expands every group unless told otherwise; the current page's ancestors open regardless.
+export const collapseGroups = (items) =>
+  items.map((item) => (item.items ? { ...item, collapsed: true, items: collapseGroups(item.items) } : item));

@@ -52,6 +52,8 @@ jobs:
         env:
           PUBLIC_CF_BEACON_TOKEN_DOCS: ${{ vars.CF_BEACON_TOKEN_DOCS }}
           PUBLIC_CF_BEACON_TOKEN_LANDING: ${{ vars.CF_BEACON_TOKEN_LANDING }}
+          # repo-stats.mjs: an authenticated GitHub API call, since runner addresses share the anonymous limit
+          GITHUB_TOKEN: ${{ github.token }}
       - run: npm test
       - run: npm run check
       - if: github.event_name == 'pull_request'

@@ -4,6 +4,7 @@ import { beaconToken } from '../../../shared/beacon.mjs';
 import '../styles/site.css';
 import bootstrap from '../../../shared/theme/bootstrap.js?raw';
 import ThemePicker from '../components/ThemePicker.astro';
+import RepoStats from '../components/RepoStats.astro';
 import videos from '../generated/videos.json';
 import { SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_PATH, hasSocialImage } from '../../../shared/social.mjs';
 
@@ -87,7 +88,7 @@ const nav = [
     </main>
     <footer class="site-footer">
       <div class="shell bar">
-        <a href="https://github.com/ttlequals0/MinusPod">GitHub</a>
+        <RepoStats />
         <a href="https://ttlequals0.com">ttlequals0.com</a>
       </div>
     </footer>

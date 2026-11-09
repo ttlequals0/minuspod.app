@@ -12,9 +12,10 @@
   "scripts": {
     "fetch:main": "bash scripts/fetch-main.sh",
     "prepare:tokens": "node scripts/tokens.mjs",
+    "prepare:stats": "node scripts/repo-stats.mjs",
     "prepare:docs": "node scripts/prepare-docs.mjs",
     "prepare:landing": "node scripts/prepare-landing.mjs",
-    "generate": "npm run prepare:tokens && npm run prepare:docs && npm run prepare:landing",
+    "generate": "npm run prepare:tokens && npm run prepare:stats && npm run prepare:docs && npm run prepare:landing",
     "build": "npm run generate && npm run build -ws",
     "check": "node scripts/check-dist.mjs docs/dist landing/dist --sidebar docs/astro.config.mjs --host https://minuspod.app=landing/dist --host https://docs.minuspod.app=docs/dist",
     "test": "vitest run && node --test demo/worker.test.mjs",
