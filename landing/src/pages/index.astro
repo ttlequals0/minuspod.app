@@ -5,6 +5,7 @@ import VideoCard from '../components/VideoCard.astro';
 import videos from '../generated/videos.json';
 import { pitch } from '../generated/pitch.json';
 import { SOCIAL_IMAGE_PATH, hasSocialImage } from '../../../shared/social.mjs';
+import { REPO_URL } from '../../../shared/repo.mjs';
 
 const demo = videos.find((v) => v.name === 'demo');
 const description = pitch.split('. ')[0] + '.';
@@ -19,8 +20,8 @@ const jsonLd = {
   applicationCategory: 'MultimediaApplication',
   operatingSystem: 'Linux, Docker',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  license: 'https://github.com/ttlequals0/MinusPod/blob/main/LICENSE',
-  codeRepository: 'https://github.com/ttlequals0/MinusPod',
+  license: `${REPO_URL}/blob/main/LICENSE`,
+  codeRepository: REPO_URL,
   softwareHelp: 'https://docs.minuspod.app/',
   ...(hasSocialImage(videos) && { screenshot: new URL(SOCIAL_IMAGE_PATH, Astro.site).href }),
 };
@@ -35,7 +36,7 @@ const jsonLd = {
     </h1>
     <p class="pitch">{description}</p>
     <div class="actions">
-      <Button variant="primary" href="https://github.com/ttlequals0/MinusPod">View on GitHub</Button>
+      <Button variant="primary" href={REPO_URL}>View on GitHub</Button>
       <Button variant="secondary" href="https://demo.minuspod.app/">Try the demo</Button>
     </div>
     <p class="detail">{detail}</p>

@@ -18,9 +18,13 @@ describe('fetchRepoStats', () => {
   });
 
   it('sends the token as a bearer header when one is set', async () => {
-    let headers;
-    await fetchRepoStats(async (url, init) => ((headers = init.headers), { ok: true, status: 200, json: async () => payload }), 'ghs_x');
-    expect(headers.Authorization).toBe('Bearer ghs_x');
+    const calls = [];
+    const fetchFn = async (url, init) => {
+      calls.push({ url, init });
+      return { ok: true, status: 200, json: async () => payload };
+    };
+    await fetchRepoStats(fetchFn, 'ghs_x');
+    expect(calls[0].init.headers.Authorization).toBe('Bearer ghs_x');
   });
 
   it('rejects an error status and a payload without counts', async () => {

@@ -3,6 +3,7 @@ import starlight from '@astrojs/starlight';
 import { existsSync, readFileSync } from 'node:fs';
 import { beaconToken } from '../shared/beacon.mjs';
 import { collapseGroups, presentPages } from '../shared/sidebar.mjs';
+import { REPO_URL } from '../shared/repo.mjs';
 import { benchmarkSidebar } from '../shared/benchmark-pages.mjs';
 import { SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_URL, hasSocialImage } from '../shared/social.mjs';
 
@@ -119,7 +120,7 @@ export default defineConfig({
         replacesTitle: true,
       },
       social: [
-        { icon: 'github', label: 'GitHub', href: 'https://github.com/ttlequals0/MinusPod' },
+        { icon: 'github', label: 'GitHub', href: REPO_URL },
       ],
       customCss: [
         ...[400, 500, 600, 700].map((w) => `@fontsource/roboto/${w}.css`),
