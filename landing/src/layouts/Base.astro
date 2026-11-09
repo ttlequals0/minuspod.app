@@ -6,7 +6,7 @@ import bootstrap from '../../../shared/theme/bootstrap.js?raw';
 import ThemePicker from '../components/ThemePicker.astro';
 import RepoStats from '../components/RepoStats.astro';
 import videos from '../generated/videos.json';
-import { SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_PATH, hasSocialImage } from '../../../shared/social.mjs';
+import { SITE_NAME, SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_PATH, hasSocialImage } from '../../../shared/social.mjs';
 
 interface Props {
   title: string;
@@ -17,7 +17,7 @@ interface Props {
 
 const { title, description, noindex = false, jsonLd } = Astro.props;
 const path = Astro.url.pathname;
-const pageTitle = title.includes('MinusPod') ? title : `${title} | MinusPod`;
+const pageTitle = title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
 const pageUrl = new URL(path, Astro.site).href;
 const image = hasSocialImage(videos) ? new URL(SOCIAL_IMAGE_PATH, Astro.site).href : null;
 const token = beaconToken(import.meta.env.PUBLIC_CF_BEACON_TOKEN_LANDING);

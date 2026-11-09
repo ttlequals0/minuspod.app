@@ -37,7 +37,7 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
 
   test('every landing image has alt text', () => {
     for (const p of ['../landing/dist/index.html', '../landing/dist/gallery/index.html']) {
-      const imgs = page(p).match(/<img\b[^>]*>/g);
+      const imgs = page(p)?.match(/<img\b[^>]*>/g) ?? [];
       expect(imgs.length).toBeGreaterThan(0);
       expect(imgs.filter((t) => !/\balt="[^"]+"/.test(t))).toEqual([]);
     }
@@ -90,8 +90,10 @@ describe.skipIf(!docsHtml)('docs built html (build docs first)', () => {
 
   test('no docs title tag is longer than 70 characters', () => {
     const pages = readdirSync(new URL('../docs/dist/', import.meta.url), { recursive: true }).filter((p) => p.endsWith('index.html'));
+    // the built title is entity-encoded; measure the text a browser shows
+    const decode = (t) => t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
     const long = pages
-      .map((p) => [p, /<title>([^<]*)<\/title>/.exec(page(`../docs/dist/${p}`))?.[1] ?? ''])
+      .map((p) => [p, decode(/<title>([^<]*)<\/title>/.exec(page(`../docs/dist/${p}`))?.[1] ?? '')])
       .filter(([, t]) => t.length > 70);
     expect(pages.length).toBeGreaterThan(50);
     expect(long).toEqual([]);

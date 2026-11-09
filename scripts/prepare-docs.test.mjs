@@ -36,6 +36,8 @@ test('a long title keeps its first clause as the tab title, a short one is left 
   expect(shortTitle('Formal release process and in-app update checks (issue #567)')).toBe('Formal release process and in-app update checks | MinusPod');
   expect(shortTitle('Design: split src/main_app/processing.py by pipeline stage, then the tests')).toBe('Split src/main_app/processing.py by pipeline stage | MinusPod');
   expect(shortTitle('A very long first clause without any separator that keeps going on and on past the limit')).toBeNull();
+  expect(shortTitle('Plan: shard the detection queue across workers and retire the legacy path')).toBeNull();
+  expect(shortTitle('Fast, deterministic sponsor matching across episodes with cached transcripts and verdicts')).toBeNull();
 });
 
 test('renderPage writes a head title only when the page title is long', () => {
