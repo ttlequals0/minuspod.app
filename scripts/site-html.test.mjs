@@ -91,7 +91,8 @@ describe.skipIf(!docsHtml)('docs built html (build docs first)', () => {
   test('no docs title tag is longer than 70 characters', () => {
     const pages = readdirSync(new URL('../docs/dist/', import.meta.url), { recursive: true }).filter((p) => p.endsWith('index.html'));
     // the built title is entity-encoded; measure the text a browser shows
-    const decode = (t) => t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+    const entities = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" };
+    const decode = (t) => t.replace(/&(amp|lt|gt|quot|#39);/g, (m, e) => entities[e]);
     const long = pages
       .map((p) => [p, decode(/<title>([^<]*)<\/title>/.exec(page(`../docs/dist/${p}`))?.[1] ?? '')])
       .filter(([, t]) => t.length > 70);
