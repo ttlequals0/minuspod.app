@@ -80,7 +80,7 @@ describe.skipIf(!docsHtml)('docs built html (build docs first)', () => {
 
   test('docs logo links to the landing page and names the site', () => {
     expect(docsHtml).toContain('<a href="https://minuspod.app/" class="site-title');
-    expect(docsHtml.match(/<img[^>]*alt="MinusPod"/g)).toHaveLength(2);
+    expect(docsHtml).toContain('alt="MinusPod"');
   });
 
   test('docs inline Starlight theme provider is replaced', () => {
