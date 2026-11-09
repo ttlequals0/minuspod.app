@@ -2,7 +2,8 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import { existsSync, readFileSync } from 'node:fs';
 import { beaconToken } from '../shared/beacon.mjs';
-import { presentPages } from '../shared/sidebar.mjs';
+import { collapseGroups, presentPages } from '../shared/sidebar.mjs';
+import { REPO_URL } from '../shared/repo.mjs';
 import { benchmarkSidebar } from '../shared/benchmark-pages.mjs';
 import { SOCIAL_IMAGE_ALT, SOCIAL_IMAGE_URL, hasSocialImage } from '../shared/social.mjs';
 
@@ -24,7 +25,7 @@ function beaconHead() {
 const CONTENT = new URL('./src/content/docs/', import.meta.url);
 const hasPage = (slug) => ['.md', '.mdx', '/index.md'].some((ext) => existsSync(new URL(slug + ext, CONTENT)));
 
-export const SIDEBAR = presentPages([
+export const SIDEBAR = collapseGroups(presentPages([
   {
     label: 'Get started',
     items: [
@@ -88,7 +89,7 @@ export const SIDEBAR = presentPages([
       { label: 'Design specs', items: [{ autogenerate: { directory: 'specs' } }] },
     ],
   },
-], hasPage);
+], hasPage));
 
 // Starlight sets twitter:card to summary_large_image without an image; the landing poster fills it
 // when prepare-landing produced the demo video (landing/src/generated/videos.json).
@@ -119,7 +120,7 @@ export default defineConfig({
         replacesTitle: true,
       },
       social: [
-        { icon: 'github', label: 'GitHub', href: 'https://github.com/ttlequals0/MinusPod' },
+        { icon: 'github', label: 'GitHub', href: REPO_URL },
       ],
       customCss: [
         ...[400, 500, 600, 700].map((w) => `@fontsource/roboto/${w}.css`),

@@ -52,6 +52,8 @@ jobs:
         env:
           PUBLIC_CF_BEACON_TOKEN_DOCS: ${{ vars.CF_BEACON_TOKEN_DOCS }}
           PUBLIC_CF_BEACON_TOKEN_LANDING: ${{ vars.CF_BEACON_TOKEN_LANDING }}
+          # for scripts/repo-stats.mjs
+          GITHUB_TOKEN: ${{ github.token }}
       - run: npm test
       - run: npm run check
       - if: github.event_name == 'pull_request'

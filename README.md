@@ -11,7 +11,7 @@ Content comes from a checkout of the MinusPod main repo, which is never committe
 - `.main/`: shallow clone of MinusPod main (gitignored)
 - `.jev/`: shallow clone of MinusPodJev main, the source of the Jev benchmark pages (gitignored)
 - `shared/theme/`: the theme picker both sites use (cookie store, inline bootstrap, picker wiring)
-- `shared/generated/`: `npm run generate` output (gitignored), `tokens.css` with every pair from the app's `themes.ts` plus the `themes.json` the pickers render from
+- `shared/generated/`: `npm run generate` output (gitignored): `tokens.css` with every pair from the app's `themes.ts`, `themes.json` for the pickers, and `repo-stats.json` with the landing footer's star and fork counts
 
 Both sites show the same theme list as the app. The choice is stored in a `minuspod-theme` cookie on the parent domain, so the landing page and the docs open in the same pair and mode.
 

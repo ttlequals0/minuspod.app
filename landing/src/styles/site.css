@@ -365,6 +365,21 @@ figcaption .length {
   justify-content: flex-start;
 }
 
+.repo-stats {
+  gap: 0.625rem;
+}
+
+.repo-stats .stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.repo-stats svg {
+  flex: none;
+  fill: currentColor;
+}
+
 @media (min-width: 768px) {
   .shell {
     padding-inline: max(1.5rem, env(safe-area-inset-left)) max(1.5rem, env(safe-area-inset-right));

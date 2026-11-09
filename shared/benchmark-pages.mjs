@@ -48,7 +48,7 @@ export function benchmarkSidebar() {
   const entry = ({ slug, label }) => ({ slug, label });
   const under = (repo, prefix) => Object.values(BENCHMARK_PAGES[repo]).filter((p) => p.slug.startsWith(prefix)).map(entry);
   const llm = under('main', 'benchmarks/llm');
-  llm.splice(llm.findIndex((i) => i.slug === RESULTS_SLUG) + 1, 0, { label: 'Past runs', collapsed: true, items: [{ autogenerate: { directory: ARCHIVE_SLUG } }] });
+  llm.splice(llm.findIndex((i) => i.slug === RESULTS_SLUG) + 1, 0, { label: 'Past runs', items: [{ autogenerate: { directory: ARCHIVE_SLUG } }] });
   return {
     label: 'Benchmarks',
     items: [

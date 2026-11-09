@@ -35,6 +35,12 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
     expect(html).toContain('class="logo-dark"');
   });
 
+  test('footer links the star and fork counts to the repository', () => {
+    const link = html.match(/<a class="repo-stats" href="https:\/\/github.com\/ttlequals0\/MinusPod" aria-label="([^"]+)">/);
+    expect(link).not.toBeNull();
+    expect(link[1]).toMatch(/^MinusPod on GitHub(: \d[\d.]*K? stars, \d[\d.]*K? forks)?$/);
+  });
+
   test('landing head carries the social and structured-data tags', () => {
     expect(html).toMatch(/<title>MinusPod: [^<]+<\/title>/);
     expect(html).toContain('<meta property="og:url" content="https://minuspod.app/">');
@@ -57,6 +63,11 @@ describe.skipIf(!docsHtml)('docs built html (build docs first)', () => {
 
   test('docs renders the picker in header and mobile menu', () => {
     expect(docsHtml.match(/<details class="theme-pair">/g)).toHaveLength(2);
+  });
+
+  test('docs sidebar opens only the group holding the current page', () => {
+    expect(docsHtml.match(/<details[^>]*\bopen\b/g)).toHaveLength(1);
+    expect(docsHtml.match(/<details[^>]*class="astro-/g).length).toBeGreaterThan(5);
   });
 
   test('docs logo links to the landing page', () => {

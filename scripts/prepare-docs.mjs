@@ -7,8 +7,8 @@ import { videoIndex } from './lib/videos.mjs';
 import { apiPages } from './lib/openapi-md.mjs';
 import { ARCHIVE_DIR, ARCHIVE_SLUG, BENCHMARK_PAGES, RESULTS_SLUG } from '../shared/benchmark-pages.mjs';
 import { parse as parseYaml } from 'yaml';
+import { REPO_URL } from '../shared/repo.mjs';
 
-const GH = 'https://github.com/ttlequals0/MinusPod';
 const GH_JEV = 'https://github.com/ttlequals0/MinusPodJev';
 const STATIC_DIRS = ['images', 'screenshots', 'schemas', 'examples'];
 // Sidebar frontmatter by output path relative to the docs content dir.
@@ -22,7 +22,7 @@ const pageKey = (rel) => rel.slice(0, -3).toLowerCase().replace(/(^|\/)readme$/,
 // Where a page comes from: the repo, the directory its relative path is under, the page table
 // for cross-links, and its slug when it does not follow from the path. Docs pages are the default.
 const REPOS = {
-  main: { gh: GH, assetRoot: 'benchmarks/', publicRoot: '/benchmarks/' },
+  main: { gh: REPO_URL, assetRoot: 'benchmarks/', publicRoot: '/benchmarks/' },
   jev: { gh: GH_JEV, assetRoot: 'benchmark/', publicRoot: '/benchmarks/jev/' },
 };
 const DOCS = { repo: 'main', base: 'docs', pages: BENCHMARK_PAGES };
@@ -98,13 +98,13 @@ export function rewriteLink(href, fromRel, source = DOCS) {
     if (STATIC_DIRS.includes(rel.split('/')[0])) return `/${rel}${fragment}`;
     if (/^videos\/[^/]+\.mp4$/.test(rel)) return `https://minuspod.app/${rel}`;
   } else if (repoPath === 'README.md') {
-    return `${GH}#readme`;
+    return `${REPO_URL}#readme`;
   } else if (repoPath === 'openapi.yaml') {
     // the spec is rendered as the API reference; a schema pointer lands on its heading
     const schema = /^#\/components\/schemas\/([^/]+)$/.exec(fragment);
     return schema ? `/api/schemas/#${headingSlug(schema[1])}` : '/api/';
   }
-  return `${GH}/${repoPath.endsWith('/') ? 'tree' : 'blob'}/main/${repoPath}${fragment}`;
+  return `${REPO_URL}/${repoPath.endsWith('/') ? 'tree' : 'blob'}/main/${repoPath}${fragment}`;
 }
 
 function pickVideo(videos, fromRel, headingSlugNow) {

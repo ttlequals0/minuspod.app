@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import videos from '../generated/videos.json';
 import { pitch } from '../generated/pitch.json';
 import { formatLength, videoUrl } from '../lib/video';
+import { REPO_URL } from '../../../shared/repo.mjs';
 
 export const GET: APIRoute = ({ site }) => {
   const abs = (p: string) => new URL(p, site).href;
@@ -12,7 +13,7 @@ export const GET: APIRoute = ({ site }) => {
     pitch,
     '',
     '- Documentation: https://docs.minuspod.app/',
-    '- Source and releases: https://github.com/ttlequals0/MinusPod',
+    `- Source and releases: ${REPO_URL}`,
     '- Demo: https://demo.minuspod.app/',
     `- Gallery: ${abs('/gallery/')}`,
   ];
