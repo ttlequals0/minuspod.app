@@ -118,6 +118,7 @@ export default defineConfig({
         light: './src/assets/generated/logo.svg',
         dark: './src/assets/generated/logo-dark.svg',
         replacesTitle: true,
+        alt: 'MinusPod',
       },
       social: [
         { icon: 'github', label: 'GitHub', href: REPO_URL },

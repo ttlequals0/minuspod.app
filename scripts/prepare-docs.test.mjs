@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BENCHMARK_PAGES } from '../shared/benchmark-pages.mjs';
-import { archiveDates, archiveIndex, archivePages, listMarkdown, renderPage, rewriteLink, transformMarkdown } from './prepare-docs.mjs';
+import { archiveDates, archiveIndex, archivePages, listMarkdown, renderPage, rewriteLink, shortTitle, transformMarkdown } from './prepare-docs.mjs';
 import { parseVideoTable, videoIndex } from './lib/videos.mjs';
 import { headingSlug, mapSrcset } from './lib/md.mjs';
 
@@ -27,6 +27,24 @@ test.each([
   ['https://openrouter.ai', 'x.md', 'https://openrouter.ai'],
 ])('rewriteLink(%s from %s)', (href, from, expected) => {
   expect(rewriteLink(href, from)).toBe(expected);
+});
+
+test('a long title keeps its first clause as the tab title, a short one is left alone', () => {
+  expect(shortTitle('Installation')).toBeNull();
+  expect(shortTitle('Spec: End-of-episode ad fixes + audio splice-evidence signals + cross-fetch differential')).toBe('End-of-episode ad fixes | MinusPod');
+  expect(shortTitle('Detection tuning: actionable pass-2 misses, scoped rejections, label hygiene (2.76.0)')).toBe('Detection tuning | MinusPod');
+  expect(shortTitle('Formal release process and in-app update checks (issue #567)')).toBe('Formal release process and in-app update checks | MinusPod');
+  expect(shortTitle('Design: split src/main_app/processing.py by pipeline stage, then the tests')).toBe('Split src/main_app/processing.py by pipeline stage | MinusPod');
+  const long = 'A very long first clause without any separator that keeps going on and on past the limit';
+  expect(shortTitle(long).length).toBeLessThanOrEqual(70);
+  expect(shortTitle(long).endsWith(' | MinusPod')).toBe(true);
+});
+
+test('renderPage writes a head title only when the page title is long', () => {
+  const short = renderPage({ frontmatter: { title: 'Installation', description: 'd' }, body: 'x' });
+  expect(short).not.toContain('head:');
+  const page = renderPage({ frontmatter: { title: 'Cue play UX, content-transition prompt fix, pairing parity, threshold auto-suggest', description: 'd' }, body: 'x' });
+  expect(page).toContain('head:\n  - tag: title\n    content: "Cue play UX | MinusPod"');
 });
 
 test('frontmatter skips the nav line and strips the H1', () => {

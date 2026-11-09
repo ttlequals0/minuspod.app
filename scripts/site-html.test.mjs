@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { DEFAULT_PAIR } from '../shared/theme/config.mjs';
 
 function page(path) {
@@ -35,6 +35,14 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
     expect(html).toContain('class="logo-dark"');
   });
 
+  test('every landing image has alt text', () => {
+    for (const p of ['../landing/dist/index.html', '../landing/dist/gallery/index.html']) {
+      const imgs = page(p).match(/<img\b[^>]*>/g);
+      expect(imgs.length).toBeGreaterThan(0);
+      expect(imgs.filter((t) => !/\balt="[^"]+"/.test(t))).toEqual([]);
+    }
+  });
+
   test('footer links the star and fork counts to the repository', () => {
     const link = html.match(/<a class="repo-stats" href="https:\/\/github.com\/ttlequals0\/MinusPod" aria-label="([^"]+)">/);
     expect(link).not.toBeNull();
@@ -47,7 +55,7 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
     expect(html).toContain('<meta property="og:site_name" content="MinusPod">');
     expect(html).toContain('<meta name="twitter:card" content="summary_large_image">');
     expect(html).toContain('<link rel="sitemap" type="application/xml" href="/sitemap.xml">');
-    expect(html).toMatch(/<h1>\s*<span class="sr-only">MinusPod<\/span>/);
+    expect(html).toMatch(/<h1>\s*<img class="logo-light" src="\/brand\/logo.svg" alt="MinusPod"/);
     const ld = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s);
     expect(ld).not.toBeNull();
     expect(JSON.parse(ld[1])['@type']).toBe('SoftwareApplication');
@@ -70,13 +78,23 @@ describe.skipIf(!docsHtml)('docs built html (build docs first)', () => {
     expect(docsHtml.match(/<details[^>]*class="astro-/g).length).toBeGreaterThan(5);
   });
 
-  test('docs logo links to the landing page', () => {
+  test('docs logo links to the landing page and names the site', () => {
     expect(docsHtml).toContain('<a href="https://minuspod.app/" class="site-title');
+    expect(docsHtml.match(/<img[^>]*alt="MinusPod"/g)).toHaveLength(2);
   });
 
   test('docs inline Starlight theme provider is replaced', () => {
     expect(docsHtml).toContain('dataset.pair');
     expect(docsHtml).not.toContain('starlight-theme');
+  });
+
+  test('no docs title tag is longer than 70 characters', () => {
+    const pages = readdirSync(new URL('../docs/dist/', import.meta.url), { recursive: true }).filter((p) => p.endsWith('index.html'));
+    const long = pages
+      .map((p) => [p, /<title>([^<]*)<\/title>/.exec(page(`../docs/dist/${p}`))?.[1] ?? ''])
+      .filter(([, t]) => t.length > 70);
+    expect(pages.length).toBeGreaterThan(50);
+    expect(long).toEqual([]);
   });
 
   test('docs pages carry a social image for the large card', () => {

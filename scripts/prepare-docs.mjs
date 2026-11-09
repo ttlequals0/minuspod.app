@@ -2,7 +2,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { dirname, join, posix } from 'node:path';
 import { isMain, resetDir } from './lib/cli.mjs';
 import { jevDir, mainDir, repoRoot } from './lib/main-dir.mjs';
-import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, describeText } from './lib/md.mjs';
+import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, describeText, truncateWords } from './lib/md.mjs';
 import { videoIndex } from './lib/videos.mjs';
 import { apiPages } from './lib/openapi-md.mjs';
 import { ARCHIVE_DIR, ARCHIVE_SLUG, BENCHMARK_PAGES, RESULTS_SLUG } from '../shared/benchmark-pages.mjs';
@@ -225,9 +225,23 @@ export function transformMarkdown(src, fromRel, videos = [], source = DOCS) {
   return { frontmatter, body: rewritten.join('\n') };
 }
 
+// Search engines cut a <title> past 70 characters. Starlight appends the site name to the page
+// title, so a long H1 (the design specs) keeps its first clause as the tab title; the H1 and the
+// sidebar still show the whole heading.
+const TITLE_SUFFIX = ' | MinusPod';
+const TITLE_MAX = 70;
+export function shortTitle(title) {
+  if (title.length + TITLE_SUFFIX.length <= TITLE_MAX) return null;
+  const clause = title.replace(/^(Spec|Design):\s*/, '').split(/:\s|,\s|\s\+\s|\s\(/)[0];
+  const t = clause.charAt(0).toUpperCase() + clause.slice(1);
+  return truncateWords(t, TITLE_MAX - TITLE_SUFFIX.length) + TITLE_SUFFIX;
+}
+
 export const renderPage = ({ frontmatter, body }, outPath = '') => {
   const fm = [`title: ${JSON.stringify(frontmatter.title)}`, `description: ${JSON.stringify(frontmatter.description)}`];
   if (frontmatter.slug !== undefined) fm.push(`slug: ${frontmatter.slug}`);
+  const short = shortTitle(frontmatter.title);
+  if (short) fm.push('head:', '  - tag: title', `    content: ${JSON.stringify(short)}`);
   const sidebar = frontmatter.sidebar ?? SIDEBAR_OVERRIDES[outPath];
   if (sidebar) fm.push('sidebar:', ...Object.entries(sidebar).map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`));
   // long reference pages: only the h2 per endpoint or schema in the table of contents
