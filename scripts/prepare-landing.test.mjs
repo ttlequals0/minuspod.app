@@ -64,13 +64,14 @@ test('landingShots keeps app PNGs and drops excluded captures', () => {
   expect(landingShots(['ad-editor-desktop.png', 'podcasting-2.0-validator.png', 'notes.txt'])).toEqual(['ad-editor-desktop.png']);
 });
 
-test('the order lists and exclusions match the upstream screenshots and video table', () => {
+// Unlisted upstream items still render after the listed ones, so a new video or screenshot never breaks the build.
+test('the order lists and exclusions name only upstream screenshots and video table rows', () => {
   const files = readdirSync(`${mainDir()}/docs/screenshots`);
   for (const f of EXCLUDED_SHOTS) expect(files).toContain(f);
   const keys = groupScreenshots(landingShots(files)).map((g) => g.files[0].file.replace(/-(desktop|mobile)(?=-|\.png$)/, '').replace(/\.png$/, ''));
-  expect(keys.sort()).toEqual([...GALLERY_ORDER].sort());
+  expect([...GALLERY_ORDER].filter((k) => !keys.includes(k))).toEqual([]);
   const names = parseVideoTable(readFileSync(`${mainDir()}/docs/videos/README.md`, 'utf8')).map((r) => r.name);
-  expect(names.sort()).toEqual([...VIDEO_ORDER].sort());
+  expect([...VIDEO_ORDER].filter((n) => !names.includes(n))).toEqual([]);
 });
 
 test('pngSize reads the header and rejects a file without the PNG signature', () => {

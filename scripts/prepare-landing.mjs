@@ -16,7 +16,7 @@ export const landingShots = (files) => files.filter((f) => f.endsWith('.png') &&
 // whole-app views first, then feature screens; unlisted screenshots follow in name order, unlisted videos in table order
 export const GALLERY_ORDER = ['dashboard', 'dashboard-nord', 'dashboard-themes', 'feed-detail', 'episode-detail', 'queue', 'history', 'stats',
   'ads-detected', 'ad-editor', 'sponsors', 'patterns', 'cue-matches', 'cue-templates', 'cue-editor', 'settings', 'cover-art-badge'];
-export const VIDEO_ORDER = ['demo', 'how-it-works', 'processing-modes', 'review-queue', 'patterns', 'audio-cues', 'local-feeds', 'providers', 'podcasting-2', 'youtube'];
+export const VIDEO_ORDER = ['demo', 'getting-started', 'how-it-works', 'processing-modes', 'review-queue', 'patterns', 'audio-cues', 'local-feeds', 'providers', 'podcasting-2', 'youtube'];
 const rank = (order, k) => {
   const i = order.indexOf(k);
   return i === -1 ? order.length : i;
