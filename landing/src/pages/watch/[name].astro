@@ -1,0 +1,34 @@
+---
+import Base from '../../layouts/Base.astro';
+import { formatLength, posterUrl, videoUrl, watchPaths } from '../../lib/video';
+
+export const getStaticPaths = watchPaths;
+
+const { video } = Astro.props;
+const abs = (p: string) => new URL(p, Astro.site).href;
+const poster = posterUrl(video.name);
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'VideoObject',
+  name: video.title,
+  description: video.description,
+  thumbnailUrl: abs(poster),
+  uploadDate: video.uploadDate,
+  duration: `PT${video.seconds}S`,
+  contentUrl: abs(videoUrl(video.name)),
+};
+---
+
+<Base title={video.title} description={video.description} jsonLd={jsonLd} social={{ path: poster, alt: `Still from ${video.title}`, video: videoUrl(video.name) }}>
+  <h1>{video.title}</h1>
+  <figure class="video-card watch">
+    <div class="frame">
+      <video controls playsinline preload="none" poster={poster} src={videoUrl(video.name)} aria-label={video.title}></video>
+    </div>
+    <figcaption>
+      <p>{video.description}</p>
+      <p class="length">{formatLength(video.seconds)}</p>
+    </figcaption>
+  </figure>
+  <p class="watch-back"><a href="/gallery/">All videos and screenshots</a></p>
+</Base>

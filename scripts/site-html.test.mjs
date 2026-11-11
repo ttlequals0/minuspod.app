@@ -36,7 +36,7 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
   });
 
   test('every landing image has alt text', () => {
-    for (const p of ['../landing/dist/index.html', '../landing/dist/gallery/index.html']) {
+    for (const p of ['../landing/dist/index.html', '../landing/dist/gallery/index.html', '../landing/dist/watch/demo/index.html']) {
       const imgs = page(p)?.match(/<img\b[^>]*>/g) ?? [];
       expect(imgs.length).toBeGreaterThan(0);
       expect(imgs.filter((t) => !/\balt="[^"]+"/.test(t))).toEqual([]);
@@ -59,6 +59,30 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
     const ld = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s);
     expect(ld).not.toBeNull();
     expect(JSON.parse(ld[1])['@type']).toBe('SoftwareApplication');
+  });
+
+  test('a watch page serves one video with VideoObject markup and the gallery links it', () => {
+    const watch = page('../landing/dist/watch/demo/index.html');
+    const players = watch.match(/<video\b[^>]*>/g);
+    expect(players).toHaveLength(1);
+    expect(players[0]).toContain('src="/videos/minuspod-demo-landscape.mp4"');
+    expect(players[0]).toContain('poster="/videos/demo-landscape.jpg"');
+    expect(watch).toContain('<link rel="canonical" href="https://minuspod.app/watch/demo/">');
+    expect(watch).toContain('<meta property="og:image" content="https://minuspod.app/videos/demo-landscape.jpg">');
+    expect(watch).toContain('<meta property="og:type" content="video.other">');
+    expect(watch).toContain('<meta property="og:video" content="https://minuspod.app/videos/minuspod-demo-landscape.mp4">');
+    expect(html).toContain('<meta property="og:type" content="website">');
+    const ld = JSON.parse(watch.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
+    expect(ld).toMatchObject({
+      '@type': 'VideoObject',
+      thumbnailUrl: 'https://minuspod.app/videos/demo-landscape.jpg',
+      contentUrl: 'https://minuspod.app/videos/minuspod-demo-landscape.mp4',
+    });
+    expect(ld.name).toBeTruthy();
+    expect(ld.description).toBeTruthy();
+    expect(ld.duration).toMatch(/^PT\d+S$/);
+    expect(Date.parse(ld.uploadDate)).not.toBeNaN();
+    expect(page('../landing/dist/gallery/index.html')).toContain('href="/watch/demo/"');
   });
 });
 

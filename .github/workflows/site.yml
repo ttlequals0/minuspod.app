@@ -35,7 +35,9 @@ jobs:
           repository: ttlequals0/MinusPod
           ref: main
           path: .main
-          fetch-depth: 1
+          # full history without old blobs: prepare-landing dates each video by its last commit
+          fetch-depth: 0
+          filter: blob:none
       - uses: actions/checkout@v5
         with:
           repository: ttlequals0/MinusPodJev
