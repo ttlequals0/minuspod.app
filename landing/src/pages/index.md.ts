@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import videos from '../generated/videos.json';
 import { pitch } from '../generated/pitch.json';
-import { formatLength, videoUrl } from '../lib/video';
+import { formatLength, videoUrl, watchPath } from '../lib/video';
 import { REPO_URL } from '../../../shared/repo.mjs';
 
 export const GET: APIRoute = ({ site }) => {
@@ -18,7 +18,7 @@ export const GET: APIRoute = ({ site }) => {
     `- Gallery: ${abs('/gallery/')}`,
   ];
   if (demo) {
-    lines.push('', '## A tour of the web UI', '', `${demo.title} (${formatLength(demo.seconds)}): ${demo.description}`, '', `Video: ${abs(videoUrl(demo.name))}`);
+    lines.push('', '## A tour of the web UI', '', `${demo.title} (${formatLength(demo.seconds)}): ${demo.description}`, '', `Page: ${abs(watchPath(demo.name))}`, '', `Video: ${abs(videoUrl(demo.name))}`);
   }
   return new Response(lines.join('\n') + '\n');
 };

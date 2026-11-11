@@ -1,8 +1,8 @@
 import { test, expect } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { EXCLUDED_SHOTS, GALLERY_ORDER, VIDEO_ORDER, extractPitch, groupScreenshots, landingShots, missingCuts, pngSize, posterStale } from './prepare-landing.mjs';
+import { EXCLUDED_SHOTS, assertFullHistory, GALLERY_ORDER, VIDEO_ORDER, extractPitch, groupScreenshots, landingShots, missingCuts, pngSize, posterStale, videoDate } from './prepare-landing.mjs';
 import { parseVideoTable } from './lib/videos.mjs';
 import { mainDir } from './lib/main-dir.mjs';
 
@@ -104,4 +104,28 @@ test('missingCuts names the portrait or landscape file a table row lacks', () =>
   const rows = [{ name: 'a' }, { name: 'b' }];
   expect(missingCuts(rows, ['minuspod-a.mp4', 'minuspod-a-landscape.mp4', 'minuspod-b-landscape.mp4'])).toEqual(['minuspod-b.mp4']);
   expect(missingCuts(rows, ['minuspod-a.mp4', 'minuspod-a-landscape.mp4', 'minuspod-b.mp4', 'minuspod-b-landscape.mp4'])).toEqual([]);
+});
+
+test('videoDate asks git for the last commit of the landscape cut', () => {
+  const calls = [];
+  const exec = (cmd, args) => {
+    calls.push([cmd, ...args]);
+    return '2026-11-06T17:18:56-05:00\n';
+  };
+  expect(videoDate('/main', 'demo', exec)).toBe('2026-11-06T17:18:56-05:00');
+  expect(calls).toEqual([['git', '-C', '/main', 'log', '-1', '--format=%cI', '--', 'docs/videos/minuspod-demo-landscape.mp4']]);
+});
+
+test('a video without a commit is dated by its file', () => {
+  const main = mkdtempSync(join(tmpdir(), 'video-date-'));
+  const mp4 = join(main, 'docs/videos/minuspod-demo-landscape.mp4');
+  mkdirSync(join(main, 'docs/videos'), { recursive: true });
+  writeFileSync(mp4, '');
+  utimesSync(mp4, new Date('2026-11-01T00:00:00Z'), new Date('2026-11-01T00:00:00Z'));
+  expect(videoDate(main, 'demo', () => '\n')).toBe('2026-11-01T00:00:00.000Z');
+});
+
+test('a shallow clone is rejected', () => {
+  expect(() => assertFullHistory('/main', () => 'true\n')).toThrow(/shallow clone/);
+  expect(() => assertFullHistory('/main', () => 'false\n')).not.toThrow();
 });

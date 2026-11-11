@@ -72,6 +72,21 @@ export const posterStale = (mp4, jpg) => !existsSync(jpg) || statSync(jpg).mtime
 export const missingCuts = (rows, files) =>
   rows.flatMap((r) => [`minuspod-${r.name}.mp4`, `minuspod-${r.name}-landscape.mp4`]).filter((f) => !files.includes(f));
 
+const git = (exec, main, ...args) => exec('git', ['-C', main, ...args], { encoding: 'utf8' }).trim();
+
+// a shallow clone would date every video by its only commit
+export function assertFullHistory(main, exec = execFileSync) {
+  if (git(exec, main, 'rev-parse', '--is-shallow-repository') === 'true') {
+    throw new Error(`prepare-landing: ${main} is a shallow clone without the video dates; rerun npm run fetch:main`);
+  }
+}
+
+// when the landscape cut last changed; a cut not committed yet in a local checkout is dated by its file
+export function videoDate(main, name, exec = execFileSync) {
+  const file = `docs/videos/minuspod-${name}-landscape.mp4`;
+  return git(exec, main, 'log', '-1', '--format=%cI', '--', file) || statSync(resolve(main, file)).mtime.toISOString();
+}
+
 function poster(mp4, jpg) {
   if (!posterStale(mp4, jpg)) return false;
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '1', '-i', mp4, '-frames:v', '1', '-q:v', '3', jpg], { stdio: 'pipe' });
@@ -114,6 +129,8 @@ if (isMain(import.meta.url)) {
   const missing = missingCuts(rows, mp4s);
   if (missing.length) throw new Error(`prepare-landing: missing video cuts: ${missing.join(', ')}`);
   rows.sort((a, b) => rank(VIDEO_ORDER, a.name) - rank(VIDEO_ORDER, b.name));
+  assertFullHistory(main);
+  for (const r of rows) r.uploadDate = videoDate(main, r.name);
   writeFileSync(`${genOut}/videos.json`, JSON.stringify(rows, null, 2) + '\n');
   writeFileSync(`${genOut}/screenshots.json`, JSON.stringify(groups, null, 2) + '\n');
   const pitch = extractPitch(readFileSync(`${main}/README.md`, 'utf8'));

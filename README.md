@@ -8,7 +8,7 @@ Content comes from a checkout of the MinusPod main repo, which is never committe
 - `docs/`: Astro docs site
 - `landing/`: Astro landing page
 - `scripts/`: prepare scripts, the main checkout helper, and the dist checker
-- `.main/`: shallow clone of MinusPod main (gitignored)
+- `.main/`: clone of MinusPod main with its history and no old blobs; the video dates come from the history (gitignored)
 - `.jev/`: shallow clone of MinusPodJev main, the source of the Jev benchmark pages (gitignored)
 - `shared/theme/`: the theme picker both sites use (cookie store, inline bootstrap, picker wiring)
 - `shared/generated/`: `npm run generate` output (gitignored): `tokens.css` with every pair from the app's `themes.ts`, `themes.json` for the pickers, and `repo-stats.json` with the landing footer's star and fork counts

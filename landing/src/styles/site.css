@@ -276,6 +276,22 @@ figcaption .length {
   font-size: 0.875rem;
 }
 
+figcaption h3 a,
+.watch-back a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+figcaption h3 a {
+  color: inherit;
+}
+
+/* the watch page always plays the landscape cut */
+.watch .frame video {
+  aspect-ratio: 16 / 9;
+}
+
 .tablist {
   display: none;
   gap: 0.25rem;
