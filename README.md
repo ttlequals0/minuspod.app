@@ -40,6 +40,6 @@ is missing:
 3. `npm run build` generates content from both checkouts and builds both sites
 4. `npm test` runs the script tests
 
-Pushes to main, docs-updated dispatches and manual runs deploy both sites through `.github/workflows/site.yml`.
+Pushes to main, docs-updated dispatches, a daily scheduled run and manual runs deploy both sites through `.github/workflows/site.yml`.
 
 To build against other checkouts, run `MAIN_REPO_DIR=$HOME/repos/MinusPod JEV_REPO_DIR=$HOME/repos/MinusPodJev npm run build`.

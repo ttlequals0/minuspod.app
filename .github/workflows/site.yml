@@ -16,6 +16,9 @@ on:
   pull_request:
   repository_dispatch:
     types: [docs-updated]
+  # daily, so the footer star and fork counts and the MinusPodJev benchmark stay current
+  schedule:
+    - cron: '17 9 * * *'
   workflow_dispatch:
 
 permissions:
