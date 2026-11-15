@@ -49,6 +49,10 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
     expect(link[1]).toMatch(/^MinusPod on GitHub(: \d[\d.]*K? stars, \d[\d.]*K? forks)?$/);
   });
 
+  test('footer links the subreddit', () => {
+    expect(html).toMatch(/<a class="reddit" href="https:\/\/www\.reddit\.com\/r\/MinusPod\/" aria-label="r\/MinusPod on Reddit">\s*<svg[^>]*aria-hidden="true"/);
+  });
+
   test('landing head carries the social and structured-data tags', () => {
     expect(html).toMatch(/<title>MinusPod: [^<]+<\/title>/);
     expect(html).toContain('<meta property="og:url" content="https://minuspod.app/">');

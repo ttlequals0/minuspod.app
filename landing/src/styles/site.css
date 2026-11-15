@@ -391,7 +391,11 @@ figcaption h3 a {
   gap: 0.25rem;
 }
 
-.repo-stats svg {
+.reddit {
+  gap: 0.375rem;
+}
+
+.site-footer svg {
   flex: none;
   fill: currentColor;
 }
