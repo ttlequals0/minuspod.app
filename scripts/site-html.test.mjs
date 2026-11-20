@@ -91,6 +91,12 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
 });
 
 describe.skipIf(!docsHtml)('docs built html (build docs first)', () => {
+  test('a docs page serves a poster link to the watch page and no player', () => {
+    const doc = page('../docs/dist/how-it-works/index.html');
+    expect(doc).toContain('<a href="https://minuspod.app/watch/how-it-works/" data-video="https://minuspod.app/videos/minuspod-how-it-works-landscape.mp4"');
+    expect(doc).not.toContain('<video');
+  });
+
   test('docs header renders the shared picker', () => {
     expect(docsHtml).toContain('Same themes as the MinusPod app');
     expect(docsHtml).toMatch(defaultPressed);

@@ -35,25 +35,19 @@ const alt = caption ? `Still from ${title}` : [title, description, length].filte
 </figure>
 
 <script>
+  import { playInPlace } from '../../../shared/video.js';
+
   for (const card of document.querySelectorAll<HTMLElement>('[data-video-card]')) {
     const play = card.querySelector<HTMLAnchorElement>('.play');
     play?.addEventListener('click', (e) => {
       e.preventDefault();
       const wide = matchMedia('(min-width: 768px)').matches;
-      const img = card.querySelector('img');
-      const video = document.createElement('video');
-      video.controls = true;
-      video.playsInline = true;
-      video.preload = 'none';
-      video.poster = `/videos/${card.dataset.name}-${wide ? 'landscape' : 'portrait'}.jpg`;
-      // keep the poster's box while the player loads
-      if (img?.naturalWidth) video.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
-      // iOS never loads a preload=none video built from <source> children; set src directly
-      video.src = wide ? play.href : play.href.replace(/-landscape\.mp4$/, '.mp4');
-      video.setAttribute('aria-label', card.dataset.title ?? '');
-      card.querySelector('.frame')?.replaceChildren(video);
-      video.focus();
-      video.play().catch((err) => console.warn('video play failed', err));
+      playInPlace((video) => card.querySelector('.frame')?.replaceChildren(video), {
+        src: wide ? play.href : play.href.replace(/-landscape\.mp4$/, '.mp4'),
+        poster: `/videos/${card.dataset.name}-${wide ? 'landscape' : 'portrait'}.jpg`,
+        title: card.dataset.title ?? '',
+        img: card.querySelector('img'),
+      });
     });
   }
 </script>
