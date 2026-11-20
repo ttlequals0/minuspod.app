@@ -5,6 +5,8 @@ import MarkdownContent from '@astrojs/starlight/components/MarkdownContent.astro
 <MarkdownContent><slot /></MarkdownContent>
 
 <script>
+  import { playInPlace } from '../../../shared/video.js';
+
   const observer = new ResizeObserver((entries) => {
     for (const { target } of entries) {
       if (target.scrollWidth > target.clientWidth) target.setAttribute('tabindex', '0');
@@ -16,5 +18,20 @@ import MarkdownContent from '@astrojs/starlight/components/MarkdownContent.astro
       table.setAttribute('aria-label', 'Data table');
     }
     observer.observe(table);
+  }
+
+  // the docs serve a poster link per video; a plain click plays it in place
+  for (const link of document.querySelectorAll<HTMLAnchorElement>('a[data-video]')) {
+    link.addEventListener('click', (e) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      const img = link.querySelector('img');
+      playInPlace((video) => link.replaceWith(video), {
+        src: link.dataset.video ?? '',
+        poster: img?.src ?? '',
+        title: link.dataset.title ?? '',
+        img,
+      });
+    });
   }
 </script>

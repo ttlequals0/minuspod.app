@@ -70,16 +70,16 @@ const videosReadme = '# Videos\n\n| Video | Portrait | Landscape | Length | What
 
 test('videoIndex joins the two tables and drops targets outside docs', () => {
   expect(videoIndex(videosReadme)).toEqual([
-    { name: 'demo', targets: [{ file: 'web-interface.md', fragment: null }] },
-    { name: 'how-it-works', targets: [{ file: 'how-it-works.md', fragment: null }] },
-    { name: 'review-queue', targets: [{ file: 'web-interface.md', fragment: 'held-for-review' }] },
+    { name: 'demo', title: 'UI tour', targets: [{ file: 'web-interface.md', fragment: null }] },
+    { name: 'how-it-works', title: 'How it works', targets: [{ file: 'how-it-works.md', fragment: null }] },
+    { name: 'review-queue', title: 'Review queue', targets: [{ file: 'web-interface.md', fragment: 'held-for-review' }] },
   ]);
 });
 
-test('replaces a bare user-attachments line with a video element', () => {
+test('replaces a bare user-attachments line with a poster link to the watch page', () => {
   const src = '# H\n\nIntro.\n\nhttps://github.com/user-attachments/assets/cf3d38d7-3df6-4e8d-bac1-c5dd720dc4b6\n';
   const { body } = transformMarkdown(src, 'how-it-works.md', videoIndex(videosReadme));
-  expect(body).toContain('<video controls preload="none" playsinline poster="https://minuspod.app/videos/how-it-works-landscape.jpg" src="https://minuspod.app/videos/minuspod-how-it-works-landscape.mp4"></video>');
+  expect(body).toContain('<a href="https://minuspod.app/watch/how-it-works/" data-video="https://minuspod.app/videos/minuspod-how-it-works-landscape.mp4" data-title="How it works"><img src="https://minuspod.app/videos/how-it-works-landscape.jpg" alt="Play video: How it works" width="1920" height="1080" loading="lazy"></a>');
 });
 
 test('picks the video by section when a file embeds two', () => {

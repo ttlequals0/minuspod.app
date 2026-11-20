@@ -8,7 +8,7 @@ import { apiPages } from './lib/openapi-md.mjs';
 import { ARCHIVE_DIR, ARCHIVE_SLUG, BENCHMARK_PAGES, RESULTS_SLUG } from '../shared/benchmark-pages.mjs';
 import { parse as parseYaml } from 'yaml';
 import { REPO_URL } from '../shared/repo.mjs';
-import { SITE_NAME } from '../shared/social.mjs';
+import { LANDING_SITE, SITE_NAME } from '../shared/social.mjs';
 
 const GH_JEV = 'https://github.com/ttlequals0/MinusPodJev';
 const STATIC_DIRS = ['images', 'screenshots', 'schemas', 'examples'];
@@ -97,7 +97,7 @@ export function rewriteLink(href, fromRel, source = DOCS) {
       return `/${key ? `${key}/` : ''}${fragment}`;
     }
     if (STATIC_DIRS.includes(rel.split('/')[0])) return `/${rel}${fragment}`;
-    if (/^videos\/[^/]+\.mp4$/.test(rel)) return `https://minuspod.app/${rel}`;
+    if (/^videos\/[^/]+\.mp4$/.test(rel)) return `${LANDING_SITE}/${rel}`;
   } else if (repoPath === 'README.md') {
     return `${REPO_URL}#readme`;
   } else if (repoPath === 'openapi.yaml') {
@@ -117,8 +117,12 @@ function pickVideo(videos, fromRel, headingSlugNow) {
   return (bySection ?? hits.find((h) => h.targets.some((t) => t.fragment === null)))?.v;
 }
 
-const videoElement = (name) =>
-  `<video controls preload="none" playsinline poster="https://minuspod.app/videos/${name}-landscape.jpg" src="https://minuspod.app/videos/minuspod-${name}-landscape.mp4"></video>`;
+const attr = (t) => t.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+// a poster link, not a <video>: Google reports an embedded player on a page that is not a watch page.
+// The docs script swaps in the player on click; without it the link opens the watch page.
+const videoElement = ({ name, title }) =>
+  `<a href="${LANDING_SITE}/watch/${name}/" data-video="${LANDING_SITE}/videos/minuspod-${name}-landscape.mp4" data-title="${attr(title)}"><img src="${LANDING_SITE}/videos/${name}-landscape.jpg" alt="Play video: ${attr(title)}" width="1920" height="1080" loading="lazy"></a>`;
 
 const rewriteLinks = (text, fromRel, source) =>
   text.replace(LINK_RE, (m, bang, label, href, title = '') => {
@@ -197,7 +201,7 @@ export function transformMarkdown(src, fromRel, videos = [], source = DOCS) {
     const vid = VIDEO_LINE.exec(line.trim());
     if (vid) {
       const video = pickVideo(videos, fromRel, heading);
-      if (video) return videoElement(video.name);
+      if (video) return videoElement(video);
       throw new Error(`prepare-docs: ${fromRel}: no row in docs/videos/README.md for video asset ${vid[1]}`);
     }
     return line;

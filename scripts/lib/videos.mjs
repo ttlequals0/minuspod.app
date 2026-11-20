@@ -40,6 +40,7 @@ export function videoIndex(readme) {
   const embeds = parseEmbedTable(readme);
   return parseVideoTable(readme).map(({ name, title }) => ({
     name,
+    title,
     targets: embeds.find((e) => e.title === title)?.targets ?? [],
   }));
 }
