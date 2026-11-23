@@ -2,13 +2,14 @@
 
 Static sites for MinusPod: a docs site and a landing page, both built with Astro.
 Content comes from a checkout of the MinusPod main repo, which is never committed here.
+The one exception is the home page FAQ in `landing/src/data/faq.ts`, which is updated by hand.
 
 ## Layout
 
 - `docs/`: Astro docs site
 - `landing/`: Astro landing page
 - `scripts/`: prepare scripts, the main checkout helper, and the dist checker
-- `.main/`: clone of MinusPod main with its history and no old blobs; the video dates come from the history (gitignored)
+- `.main/`: clone of MinusPod main with its history and no old blobs; the video and page dates come from the history (gitignored)
 - `.jev/`: shallow clone of MinusPodJev main, the source of the Jev benchmark pages (gitignored)
 - `shared/theme/`: the theme picker both sites use (cookie store, inline bootstrap, picker wiring)
 - `shared/generated/`: `npm run generate` output (gitignored): `tokens.css` with every pair from the app's `themes.ts`, `themes.json` for the pickers, and `repo-stats.json` with the landing footer's star and fork counts
@@ -23,6 +24,9 @@ is missing:
 - `robots.txt` carries a Content-Signal line and points at `sitemap.xml`, which is built from
   the page list. Starlight also writes its own `sitemap-index.xml`; the check fails if the two
   disagree.
+- A page in `sitemap.xml` carries a `lastmod` when its source file in the main repo has a commit
+  date. On a deploy, `scripts/indexnow.mjs` compares the built sitemaps with the live ones and
+  submits new and re-dated URLs to IndexNow. Each site serves the key at `/<key>.txt`.
 - Every page has a Markdown twin. The Worker answers `Accept: text/markdown` on `/installation/`
   with `/installation.md`. Answers to requests that mention `text/markdown` carry
   `Vary: Accept`; browser responses do not, so prefetch caches can reuse them. A tab navigation
