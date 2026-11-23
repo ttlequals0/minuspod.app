@@ -81,6 +81,7 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
     const items = [...html.matchAll(/<details>\s*<summary>([^<]+)<\/summary>\s*<p>([^<]+)<a href/g)];
     expect(items.length).toBeGreaterThan(0);
     expect(html).not.toMatch(/<details open/);
+    expect(page('../landing/dist/gallery/index.html')).toContain('<a href="/#faq">FAQ</a>');
     const ld = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1])['@graph'].find((n) => n['@type'] === 'FAQPage');
     expect(ld.mainEntity.map((e) => [e.name, e.acceptedAnswer.text])).toEqual(items.map((m) => [m[1], m[2].trim()]));
   });
