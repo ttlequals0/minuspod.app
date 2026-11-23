@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import lastmod from '../generated/lastmod.json';
 import { sitemapResponse } from '../../../shared/sitemap.mjs';
 
 type Page = { getStaticPaths: () => { params: Record<string, string> }[] };
@@ -16,5 +17,5 @@ export const GET: APIRoute = async ({ site }) => {
       return getStaticPaths().map(({ params }) => name.replace(/\[(?:\.\.\.)?(\w+)\]/g, (m, key) => params[key]));
     }),
   );
-  return sitemapResponse(site!, pages.flat());
+  return sitemapResponse(site!, pages.flat(), lastmod);
 };

@@ -2,6 +2,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { dirname, join, posix } from 'node:path';
 import { isMain, resetDir } from './lib/cli.mjs';
 import { jevDir, mainDir, repoRoot } from './lib/main-dir.mjs';
+import { lastCommitDates } from './lib/git.mjs';
 import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, describeText } from './lib/md.mjs';
 import { videoIndex } from './lib/videos.mjs';
 import { apiPages } from './lib/openapi-md.mjs';
@@ -14,7 +15,7 @@ const GH_JEV = 'https://github.com/ttlequals0/MinusPodJev';
 const STATIC_DIRS = ['images', 'screenshots', 'schemas', 'examples'];
 // Sidebar frontmatter by output path relative to the docs content dir.
 const SIDEBAR_OVERRIDES = { 'specs/index.md': { label: 'Overview', order: 0 } };
-const VIDEO_LINE = /^https:\/\/github\.com\/user-attachments\/assets\/([\w-]+)$/;
+export const VIDEO_LINE = /^https:\/\/github\.com\/user-attachments\/assets\/([\w-]+)$/;
 const THEMED_PICTURE = /<picture>\s*<source\b([^>]*)>\s*<img\b([^>]*?)\s*\/?>\s*<\/picture>/g;
 
 // Lowercased page path without .md; a trailing README names its directory.
@@ -184,7 +185,16 @@ export function transformMarkdown(src, fromRel, videos = [], source = DOCS) {
 
   const body = lines.flatMap((text, i) => (drop.has(i) ? [] : [{ text, fenced: fenced[i] }]));
 
-  const description = describeText(firstParagraph(body.map((l) => l.text), body.map((l) => l.fenced)));
+  // the paragraph above a video describes the video, not the page
+  const caption = new Set();
+  body.forEach((l, i) => {
+    if (l.fenced || !VIDEO_LINE.test(l.text.trim())) return;
+    let j = i - 1;
+    while (j >= 0 && !body[j].text.trim()) j--;
+    for (; j >= 0 && body[j].text.trim() && !body[j].fenced; j--) caption.add(j);
+  });
+  const prose = body.filter((l, i) => !caption.has(i));
+  const description = describeText(firstParagraph(prose.map((l) => l.text), prose.map((l) => l.fenced)));
   const frontmatter = { title: h1?.text ?? '', description };
   const slug = source.slug ?? pageKey(fromRel);
   if (slug) frontmatter.slug = slug;
@@ -246,6 +256,7 @@ export function shortTitle(title) {
 export const renderPage = ({ frontmatter, body }, outPath = '') => {
   const fm = [`title: ${JSON.stringify(frontmatter.title)}`, `description: ${JSON.stringify(frontmatter.description)}`];
   if (frontmatter.slug !== undefined) fm.push(`slug: ${frontmatter.slug}`);
+  if (frontmatter.lastUpdated) fm.push(`lastUpdated: ${frontmatter.lastUpdated}`);
   const short = shortTitle(frontmatter.title);
   if (short) fm.push('head:', '  - tag: title', `    content: ${JSON.stringify(short)}`);
   const sidebar = frontmatter.sidebar ?? SIDEBAR_OVERRIDES[outPath];
@@ -276,8 +287,11 @@ if (isMain(import.meta.url)) {
   const dates = archiveDates(join(main, ARCHIVE_DIR));
   const pages = { main: { ...BENCHMARK_PAGES.main, ...archivePages(dates) }, jev: BENCHMARK_PAGES.jev };
   const files = listMarkdown(docsDir);
+  // shown on the page and listed as lastmod in the sitemap; the Jev clone is depth 1 and has no dates
+  const commitDates = lastCommitDates(main, ['docs', ...Object.keys(pages.main)]);
   for (const rel of files) {
     const page = transformMarkdown(readFileSync(join(docsDir, rel), 'utf8'), rel, videos, { ...DOCS, pages });
+    page.frontmatter.lastUpdated = commitDates.get(`docs/${rel}`);
     const out = outputPath(rel);
     const dest = join(outDir, out);
     mkdirSync(dirname(dest), { recursive: true });
@@ -298,6 +312,7 @@ if (isMain(import.meta.url)) {
       const assets = new Map();
       const page = transformMarkdown(readFileSync(join(dir, repoPath), 'utf8'), repoPath, [], { repo, base: '', slug: cfg.slug, pages, assets });
       page.frontmatter.title = cfg.title;
+      if (repo === 'main') page.frontmatter.lastUpdated = commitDates.get(repoPath);
       if (cfg.description) page.frontmatter.description = cfg.description;
       if (cfg.long) page.frontmatter.tableOfContents = true;
       if (cfg.sidebar) page.frontmatter.sidebar = cfg.sidebar;

@@ -1,6 +1,7 @@
-// The landing origin and the social card image both sites share: the landing's demo video poster.
+// The two origins and the social card image both sites share: the landing's demo video poster.
 export const SITE_NAME = 'MinusPod';
 export const LANDING_SITE = 'https://minuspod.app';
+export const DOCS_SITE = 'https://docs.minuspod.app';
 export const SOCIAL_IMAGE_PATH = '/videos/demo-landscape.jpg';
 export const SOCIAL_IMAGE_URL = new URL(SOCIAL_IMAGE_PATH, LANDING_SITE).href;
 export const SOCIAL_IMAGE_ALT = 'The MinusPod web UI showing an episode with its ad segments marked';
