@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { DEFAULT_PAIR } from '../shared/theme/config.mjs';
+import { INDEXNOW_KEY } from './indexnow.mjs';
 
 function page(path) {
   const file = new URL(path, import.meta.url);
@@ -59,10 +60,37 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
     expect(html).toContain('<meta property="og:site_name" content="MinusPod">');
     expect(html).toContain('<meta name="twitter:card" content="summary_large_image">');
     expect(html).toContain('<link rel="sitemap" type="application/xml" href="/sitemap.xml">');
-    expect(html).toMatch(/<h1>\s*<img class="logo-light" src="\/brand\/logo.svg" alt="MinusPod"/);
+    expect(html).toContain('<h1>Self-hosted ad removal for podcasts and YouTube</h1>');
     const ld = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s);
     expect(ld).not.toBeNull();
-    expect(JSON.parse(ld[1])['@type']).toBe('SoftwareApplication');
+    const graph = JSON.parse(ld[1])['@graph'];
+    expect(graph.map((n) => n['@type'])).toEqual(['WebSite', 'Organization', 'SoftwareApplication', 'FAQPage']);
+    expect(graph[1].sameAs).toContain('https://github.com/ttlequals0/MinusPod');
+  });
+
+  test('the home page carries the README sections with poster links and no player', () => {
+    for (const h of ['Features', 'How it works', 'Requirements', 'Quick start']) expect(html).toMatch(new RegExp(`<h2 id="[^"]+">${h}</h2>`));
+    expect(html).toMatch(/<a href="https:\/\/minuspod\.app\/watch\/how-it-works\/"><img src="https:\/\/minuspod\.app\/videos\/how-it-works-landscape\.jpg" alt="Play video: How it works"/);
+    expect(html).toContain('href="https://docs.minuspod.app/how-it-works/"');
+    expect(html).not.toMatch(/<video\b/);
+    const twin = readFileSync(new URL('../landing/dist/index.md', import.meta.url), 'utf8');
+    expect(twin).toContain('](https://minuspod.app/watch/how-it-works/)');
+  });
+
+  test('the home page FAQ is collapsed and its markup matches the visible text', () => {
+    const items = [...html.matchAll(/<details>\s*<summary>([^<]+)<\/summary>\s*<p>([^<]+)<a href/g)];
+    expect(items.length).toBeGreaterThan(0);
+    expect(html).not.toMatch(/<details open/);
+    const ld = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1])['@graph'].find((n) => n['@type'] === 'FAQPage');
+    expect(ld.mainEntity.map((e) => [e.name, e.acceptedAnswer.text])).toEqual(items.map((m) => [m[1], m[2].trim()]));
+  });
+
+  test('both sitemaps date their pages and both sites serve the IndexNow key', () => {
+    for (const site of ['landing', 'docs']) {
+      const read = (f) => readFileSync(new URL(`../${site}/dist/${f}`, import.meta.url), 'utf8');
+      expect(read('sitemap.xml')).toMatch(/\/<\/loc><lastmod>\d{4}-\d\d-\d\d/);
+      expect(read(`${INDEXNOW_KEY}.txt`)).toBe(INDEXNOW_KEY);
+    }
   });
 
   test('a watch page serves one video with VideoObject markup and the gallery links it', () => {

@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import videos from '../generated/videos.json';
 import { pitch } from '../generated/pitch.json';
+import home from '../generated/home.md?raw';
+import { faq } from '../data/faq';
 import { formatLength, videoUrl, watchPath } from '../lib/video';
 import { REPO_URL } from '../../../shared/repo.mjs';
 
@@ -20,5 +22,7 @@ export const GET: APIRoute = ({ site }) => {
   if (demo) {
     lines.push('', '## A tour of the web UI', '', `${demo.title} (${formatLength(demo.seconds)}): ${demo.description}`, '', `Page: ${abs(watchPath(demo.name))}`, '', `Video: ${abs(videoUrl(demo.name))}`);
   }
+  lines.push('', home.trimEnd(), '', '## Frequently asked questions');
+  for (const { q, a, more } of faq) lines.push('', `### ${q}`, '', `${a} [${more.label}](${more.href})`);
   return new Response(lines.join('\n') + '\n');
 };

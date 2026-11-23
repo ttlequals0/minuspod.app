@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { EXCLUDED_SHOTS, assertFullHistory, GALLERY_ORDER, VIDEO_ORDER, extractPitch, groupScreenshots, landingShots, missingCuts, pngSize, posterStale, videoDate } from './prepare-landing.mjs';
+import { EXCLUDED_SHOTS, GALLERY_ORDER, VIDEO_ORDER, extractPitch, groupScreenshots, homeMarkdown, landingShots, missingCuts, pngSize, posterStale, videoDate } from './prepare-landing.mjs';
 import { parseVideoTable } from './lib/videos.mjs';
 import { mainDir } from './lib/main-dir.mjs';
 
@@ -125,7 +125,18 @@ test('a video without a commit is dated by its file', () => {
   expect(videoDate(main, 'demo', () => '\n')).toBe('2026-11-01T00:00:00.000Z');
 });
 
-test('a shallow clone is rejected', () => {
-  expect(() => assertFullHistory('/main', () => 'true\n')).toThrow(/shallow clone/);
-  expect(() => assertFullHistory('/main', () => 'false\n')).not.toThrow();
+const README = ['intro', '', 'https://github.com/user-attachments/assets/aaa', '', '## Features', '', '**Ad detection**', '- Cuts ads. [How it works](docs/how-it-works.md#detect), [patterns](patterns/README.md)', '', '## How it works', '', 'One episode:', '', 'https://github.com/user-attachments/assets/bbb', '', '## Requirements', '', '- Docker', '', '## Quick start', '', '```bash', '**not a heading**', '```', '', '## License', '', 'MIT'].join('\n');
+
+test('homeMarkdown keeps the listed README sections with site links and poster links', () => {
+  const md = homeMarkdown(README, [{ name: 'how-it-works', title: 'How it works' }]);
+  expect(md.startsWith('## Features\n\n### Ad detection\n')).toBe(true);
+  expect(md).toContain('[How it works](https://docs.minuspod.app/how-it-works/#detect), [patterns](https://github.com/ttlequals0/MinusPod/blob/main/patterns/README.md)');
+  expect(md).toContain('[![Play video: How it works](https://minuspod.app/videos/how-it-works-landscape.jpg)](https://minuspod.app/watch/how-it-works/)');
+  expect(md).toContain('```bash\n**not a heading**\n```');
+  expect(md).not.toMatch(/intro|License|MIT|user-attachments/);
+});
+
+test('homeMarkdown fails on a missing section or an unmapped video', () => {
+  expect(() => homeMarkdown(README.replace('## Requirements', '## Needs'), [{ name: 'how-it-works', title: 't' }])).toThrow(/sections not found: Requirements/);
+  expect(() => homeMarkdown(README, [])).toThrow(/no video for the README section "How it works"/);
 });

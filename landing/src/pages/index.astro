@@ -4,35 +4,50 @@ import Button from '../components/Button.astro';
 import VideoCard from '../components/VideoCard.astro';
 import videos from '../generated/videos.json';
 import { pitch } from '../generated/pitch.json';
-import { SOCIAL_IMAGE_PATH, hasSocialImage } from '../../../shared/social.mjs';
+import { Content as Readme } from '../generated/home.md';
+import { faq } from '../data/faq';
+import { DOCS_SITE, SITE_NAME, SOCIAL_IMAGE_PATH, hasSocialImage } from '../../../shared/social.mjs';
 import { REPO_URL } from '../../../shared/repo.mjs';
 
 const demo = videos.find((v) => v.name === 'demo');
 const description = pitch.split('. ')[0] + '.';
 const detail = pitch.slice(description.length).trim();
 const title = 'MinusPod: self-hosted ad removal for podcasts and YouTube';
+const heading = 'Self-hosted ad removal for podcasts and YouTube';
+const home = new URL('/', Astro.site).href;
+// the project's other profiles, so search engines treat them and this site as one thing
+const sameAs = [REPO_URL, 'https://hub.docker.com/r/ttlequals0/minuspod', 'https://www.reddit.com/r/MinusPod/'];
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'MinusPod',
-  url: new URL('/', Astro.site).href,
-  description: pitch,
-  applicationCategory: 'MultimediaApplication',
-  operatingSystem: 'Linux, Docker',
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-  license: `${REPO_URL}/blob/main/LICENSE`,
-  codeRepository: REPO_URL,
-  softwareHelp: 'https://docs.minuspod.app/',
-  ...(hasSocialImage(videos) && { screenshot: new URL(SOCIAL_IMAGE_PATH, Astro.site).href }),
+  '@graph': [
+    { '@type': 'WebSite', '@id': `${home}#website`, name: SITE_NAME, url: home, publisher: { '@id': `${home}#organization` } },
+    { '@type': 'Organization', '@id': `${home}#organization`, name: SITE_NAME, url: home, logo: new URL('/brand/apple-touch-icon.png', Astro.site).href, sameAs },
+    {
+      '@type': 'SoftwareApplication',
+      name: SITE_NAME,
+      url: home,
+      description: pitch,
+      applicationCategory: 'MultimediaApplication',
+      operatingSystem: 'Linux, Docker',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      license: `${REPO_URL}/blob/main/LICENSE`,
+      codeRepository: REPO_URL,
+      softwareHelp: `${DOCS_SITE}/`,
+      sameAs,
+      ...(hasSocialImage(videos) && { screenshot: new URL(SOCIAL_IMAGE_PATH, Astro.site).href }),
+    },
+    { '@type': 'FAQPage', mainEntity: faq.map(({ q, a }) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
+  ],
 };
 ---
 
 <Base title={title} description={description} jsonLd={jsonLd}>
   <section class="hero">
-    <h1>
+    <p class="logo">
       <img class="logo-light" src="/brand/logo.svg" alt="MinusPod" width="520" height="160" />
       <img class="logo-dark" src="/brand/logo-dark.svg" alt="MinusPod" width="520" height="160" />
-    </h1>
+    </p>
+    <h1>{heading}</h1>
     <p class="pitch">{description}</p>
     <div class="actions">
       <Button variant="primary" href={REPO_URL}>View on GitHub</Button>
@@ -46,4 +61,16 @@ const jsonLd = {
       <VideoCard name={demo.name} title={demo.title} seconds={demo.seconds} description={demo.description} caption={false} />
     </section>
   )}
+  <div class="readme">
+    <Readme />
+  </div>
+  <section class="faq" aria-labelledby="faq-heading">
+    <h2 id="faq-heading">Frequently asked questions</h2>
+    {faq.map(({ q, a, more }) => (
+      <details>
+        <summary>{q}</summary>
+        <p>{a} <a href={more.href}>{more.label}</a></p>
+      </details>
+    ))}
+  </section>
 </Base>

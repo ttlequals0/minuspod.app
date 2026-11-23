@@ -3,8 +3,12 @@ import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { isMain, resetDir } from './lib/cli.mjs';
 import { mainDir, repoRoot } from './lib/main-dir.mjs';
+import { git, lastCommitDates } from './lib/git.mjs';
 import { parseVideoTable } from './lib/videos.mjs';
-import { stripMarkdown } from './lib/md.mjs';
+import { LINK_RE, fenceMask, stripMarkdown } from './lib/md.mjs';
+import { VIDEO_LINE, rewriteLink } from './prepare-docs.mjs';
+import { BENCHMARK_PAGES } from '../shared/benchmark-pages.mjs';
+import { DOCS_SITE, LANDING_SITE } from '../shared/social.mjs';
 
 const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 const humanize = (t) => cap(t.replace(/-/g, ' '));
@@ -64,6 +68,47 @@ export function extractPitch(readme) {
   return stripMarkdown(stripTags(para).replace(/\s*\n\s*/g, ' ').trim());
 }
 
+// README sections the home page shows, and the video each one embeds
+export const HOME_SECTIONS = { Features: null, 'How it works': 'how-it-works', Requirements: null, 'Quick start': 'getting-started' };
+const README = { repo: 'main', base: '', pages: BENCHMARK_PAGES };
+
+// a poster that links to the watch page, not a player: the home page is not a watch page
+const posterLink = ({ name, title }) => `[![Play video: ${title}](${LANDING_SITE}/videos/${name}-landscape.jpg)](${LANDING_SITE}/watch/${name}/)`;
+
+// repo links become docs or GitHub links; the docs rewriter answers with paths on the docs host
+const readmeLinks = (line) =>
+  line.replace(LINK_RE, (m, bang, label, href, title = '') => {
+    const target = rewriteLink(href, 'README.md', README);
+    return target === null ? label : `${bang}[${label}](${target.startsWith('/') ? DOCS_SITE + target : target}${title})`;
+  });
+
+export function homeMarkdown(readme, rows) {
+  const lines = readme.split('\n');
+  const fenced = fenceMask(lines);
+  const found = new Set();
+  const out = [];
+  let section = null;
+  lines.forEach((line, i) => {
+    const h = !fenced[i] && /^## (.+)$/.exec(line);
+    if (h) {
+      section = h[1] in HOME_SECTIONS ? h[1] : null;
+      found.add(section);
+    }
+    if (section === null) return;
+    if (fenced[i]) return out.push(line);
+    if (VIDEO_LINE.test(line.trim())) {
+      const row = rows.find((r) => r.name === HOME_SECTIONS[section]);
+      if (!row) throw new Error(`prepare-landing: no video for the README section "${section}"`);
+      return out.push(posterLink(row));
+    }
+    // a bold line of its own names a feature group
+    out.push(readmeLinks(line.replace(/^\*\*(.+)\*\*$/, '### $1')));
+  });
+  const missing = Object.keys(HOME_SECTIONS).filter((s) => !found.has(s));
+  if (missing.length) throw new Error(`prepare-landing: README sections not found: ${missing.join(', ')}`);
+  return out.join('\n').trim() + '\n';
+}
+
 const BRAND = ['logo.svg', 'logo-dark.svg', 'favicon.svg', 'apple-touch-icon.png'];
 
 export const posterStale = (mp4, jpg) => !existsSync(jpg) || statSync(jpg).mtimeMs <= statSync(mp4).mtimeMs;
@@ -71,15 +116,6 @@ export const posterStale = (mp4, jpg) => !existsSync(jpg) || statSync(jpg).mtime
 // the player derives the portrait file from the landscape link, so every table row needs both cuts
 export const missingCuts = (rows, files) =>
   rows.flatMap((r) => [`minuspod-${r.name}.mp4`, `minuspod-${r.name}-landscape.mp4`]).filter((f) => !files.includes(f));
-
-const git = (exec, main, ...args) => exec('git', ['-C', main, ...args], { encoding: 'utf8' }).trim();
-
-// a shallow clone would date every video by its only commit
-export function assertFullHistory(main, exec = execFileSync) {
-  if (git(exec, main, 'rev-parse', '--is-shallow-repository') === 'true') {
-    throw new Error(`prepare-landing: ${main} is a shallow clone without the video dates; rerun npm run fetch:main`);
-  }
-}
 
 // when the landscape cut last changed; a cut not committed yet in a local checkout is dated by its file
 export function videoDate(main, name, exec = execFileSync) {
@@ -129,11 +165,20 @@ if (isMain(import.meta.url)) {
   const missing = missingCuts(rows, mp4s);
   if (missing.length) throw new Error(`prepare-landing: missing video cuts: ${missing.join(', ')}`);
   rows.sort((a, b) => rank(VIDEO_ORDER, a.name) - rank(VIDEO_ORDER, b.name));
-  assertFullHistory(main);
+  // also rejects a shallow clone, which would date every video by its only commit
+  const commitDates = lastCommitDates(main, ['README.md', 'docs/videos', 'docs/screenshots']);
   for (const r of rows) r.uploadDate = videoDate(main, r.name);
+  const lastmod = {
+    index: commitDates.get('README.md'),
+    gallery: [...commitDates].filter(([f]) => f.startsWith('docs/')).map(([, day]) => day).sort().at(-1),
+    ...Object.fromEntries(rows.map((r) => [`watch/${r.name}`, r.uploadDate])),
+  };
+  writeFileSync(`${genOut}/lastmod.json`, JSON.stringify(lastmod, null, 2) + '\n');
   writeFileSync(`${genOut}/videos.json`, JSON.stringify(rows, null, 2) + '\n');
   writeFileSync(`${genOut}/screenshots.json`, JSON.stringify(groups, null, 2) + '\n');
-  const pitch = extractPitch(readFileSync(`${main}/README.md`, 'utf8'));
+  const readme = readFileSync(`${main}/README.md`, 'utf8');
+  const pitch = extractPitch(readme);
+  writeFileSync(`${genOut}/home.md`, homeMarkdown(readme, rows));
   writeFileSync(`${genOut}/pitch.json`, JSON.stringify({ pitch }, null, 2) + '\n');
   console.log(`prepare-landing: ${mp4s.length} videos (${rendered} posters rendered), ${shots.length} screenshots in ${groups.length} groups, ${BRAND.length} brand files, ${rows.length} table rows`);
 }
