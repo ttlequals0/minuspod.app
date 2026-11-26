@@ -3,7 +3,7 @@ import { dirname, join, posix } from 'node:path';
 import { isMain, resetDir } from './lib/cli.mjs';
 import { jevDir, mainDir, repoRoot } from './lib/main-dir.mjs';
 import { lastCommitDates } from './lib/git.mjs';
-import { ATTR_RE, LINK_RE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, describeText } from './lib/md.mjs';
+import { ATTR_RE, LINK_RE, NON_PROSE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, describeText } from './lib/md.mjs';
 import { videoIndex } from './lib/videos.mjs';
 import { apiPages } from './lib/openapi-md.mjs';
 import { ARCHIVE_DIR, ARCHIVE_SLUG, BENCHMARK_PAGES, RESULTS_SLUG } from '../shared/benchmark-pages.mjs';
@@ -183,18 +183,20 @@ export function transformMarkdown(src, fromRel, videos = [], source = DOCS) {
     }
   });
 
-  const body = lines.flatMap((text, i) => (drop.has(i) ? [] : [{ text, fenced: fenced[i] }]));
+  const kept = lines.flatMap((text, i) => (drop.has(i) ? [] : [{ text, fenced: fenced[i] }]));
 
-  // the paragraph above a video describes the video, not the page
+  // the paragraph above a video describes the video; the poster link already names it
   const caption = new Set();
-  body.forEach((l, i) => {
+  kept.forEach((l, i) => {
     if (l.fenced || !VIDEO_LINE.test(l.text.trim())) return;
     let j = i - 1;
-    while (j >= 0 && !body[j].text.trim()) j--;
-    for (; j >= 0 && body[j].text.trim() && !body[j].fenced; j--) caption.add(j);
+    while (j >= 0 && !kept[j].text.trim()) j--;
+    const block = [];
+    for (; j >= 0 && kept[j].text.trim() && !kept[j].fenced; j--) block.push(j);
+    if (!block.some((k) => NON_PROSE.test(kept[k].text.trim()))) block.forEach((k) => caption.add(k));
   });
-  const prose = body.filter((l, i) => !caption.has(i));
-  const description = describeText(firstParagraph(prose.map((l) => l.text), prose.map((l) => l.fenced)));
+  const body = kept.filter((l, i) => !caption.has(i));
+  const description = describeText(firstParagraph(body.map((l) => l.text), body.map((l) => l.fenced)));
   const frontmatter = { title: h1?.text ?? '', description };
   const slug = source.slug ?? pageKey(fromRel);
   if (slug) frontmatter.slug = slug;
