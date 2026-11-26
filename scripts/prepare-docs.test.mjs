@@ -82,6 +82,18 @@ test('replaces a bare user-attachments line with a poster link to the watch page
   expect(body).toContain('<a href="https://minuspod.app/watch/how-it-works/" data-video="https://minuspod.app/videos/minuspod-how-it-works-landscape.mp4" data-title="How it works"><img src="https://minuspod.app/videos/how-it-works-landscape.jpg" alt="Play video: How it works" width="1920" height="1080" loading="lazy"></a>');
 });
 
+test('drops the caption paragraph above a video and keeps a heading above one', () => {
+  const asset = 'https://github.com/user-attachments/assets/cf3d38d7-3df6-4e8d-bac1-c5dd720dc4b6';
+  const src = `# H\n\nPage intro.\n\nOne episode, start to finish.\nPortrait cut in [Videos](videos/README.md).\n\n${asset}\n\n## Stages\n\n${asset}\n`;
+  const { body, frontmatter } = transformMarkdown(src, 'how-it-works.md', videoIndex(videosReadme));
+  expect(body).not.toContain('Portrait cut');
+  expect(body).not.toContain('One episode');
+  expect(body).toContain('Page intro.');
+  expect(body).toContain('## Stages');
+  expect(body.match(/data-video=/g)).toHaveLength(2);
+  expect(frontmatter.description).toBe('Page intro.');
+});
+
 test('picks the video by section when a file embeds two', () => {
   const src = '# Web Interface\n\n## Contents\n\nhttps://github.com/user-attachments/assets/2078724e-ca79-4368-a901-3817f9a0d213\n\n### Held for Review\n\nhttps://github.com/user-attachments/assets/f6eb6291-5143-47cd-8d48-f7629e7043a2\n';
   const { body } = transformMarkdown(src, 'web-interface.md', videoIndex(videosReadme));

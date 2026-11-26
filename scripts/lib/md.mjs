@@ -59,7 +59,7 @@ export function firstH1(lines, fenced) {
   return i === -1 ? null : { index: i, text: stripMarkdown(lines[i].slice(2)) };
 }
 
-const NON_PROSE = /^(#|\||<|```|~~~|[-*+] |\d+\. |>|https?:\/\/|!\[)/;
+export const NON_PROSE = /^(#|\||<|```|~~~|[-*+] |\d+\. |>|https?:\/\/|!\[)/;
 const METADATA_LINE = /^[A-Z][A-Za-z ]{0,30}: /; // "Date: 2026-07-12", "Status: implemented"
 const SPEC_KEY = /^(Date|Status|Target|Issue|Source|Author)\b/; // a lone metadata line has no structure to detect, only its key
 
