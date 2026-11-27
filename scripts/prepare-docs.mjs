@@ -4,7 +4,7 @@ import { isMain, resetDir } from './lib/cli.mjs';
 import { jevDir, mainDir, repoRoot } from './lib/main-dir.mjs';
 import { lastCommitDates } from './lib/git.mjs';
 import { ATTR_RE, LINK_RE, NON_PROSE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, describeText } from './lib/md.mjs';
-import { videoIndex, withoutDescriptions } from './lib/videos.mjs';
+import { videoIndex } from './lib/videos.mjs';
 import { apiPages } from './lib/openapi-md.mjs';
 import { ARCHIVE_DIR, ARCHIVE_SLUG, BENCHMARK_PAGES, RESULTS_SLUG } from '../shared/benchmark-pages.mjs';
 import { parse as parseYaml } from 'yaml';
@@ -13,8 +13,9 @@ import { LANDING_SITE, SITE_NAME } from '../shared/social.mjs';
 
 const GH_JEV = 'https://github.com/ttlequals0/MinusPodJev';
 const STATIC_DIRS = ['images', 'screenshots', 'schemas', 'examples'];
-// Sidebar frontmatter by output path relative to the docs content dir.
-const SIDEBAR_OVERRIDES = { 'specs/index.md': { label: 'Overview', order: 0 } };
+// maintainer material the docs site leaves out; links to it go to GitHub, or to the gallery for the videos
+const REPO_ONLY = ['specs', 'videos', 'CONTRIBUTING.md', 'releasing.md', 'demo-changelog.md'];
+const repoOnly = (rel) => REPO_ONLY.some((p) => rel === p || rel.startsWith(`${p}/`));
 const VIDEOS_README = 'videos/README.md';
 export const VIDEO_LINE = /^https:\/\/github\.com\/user-attachments\/assets\/([\w-]+)$/;
 const THEMED_PICTURE = /<picture>\s*<source\b([^>]*)>\s*<img\b([^>]*?)\s*\/?>\s*<\/picture>/g;
@@ -94,7 +95,8 @@ export function rewriteLink(href, fromRel, source = DOCS) {
 
   if (repoPath.startsWith('docs/')) {
     const rel = repoPath.slice('docs/'.length);
-    if (rel.endsWith('.md')) {
+    if (rel === VIDEOS_README || rel === 'videos/') return `${LANDING_SITE}/gallery/`;
+    if (rel.endsWith('.md') && !repoOnly(rel)) {
       const key = pageKey(rel);
       return `/${key ? `${key}/` : ''}${fragment}`;
     }
@@ -244,7 +246,7 @@ export function transformMarkdown(src, fromRel, videos = [], source = DOCS) {
 }
 
 // Search engines cut a <title> past 70 characters. Starlight appends the site name to the page
-// title, so a long H1 (the design specs) keeps its first clause as the tab title; the H1 and the
+// title, so a long H1 keeps its first clause as the tab title; the H1 and the
 // sidebar still show the whole heading. A clause that is itself too long, or a single word, leaves
 // the title alone.
 const TITLE_SUFFIX = ` | ${SITE_NAME}`;
@@ -256,14 +258,13 @@ export function shortTitle(title) {
   return short.length <= TITLE_MAX && clause.includes(' ') ? short : null;
 }
 
-export const renderPage = ({ frontmatter, body }, outPath = '') => {
+export const renderPage = ({ frontmatter, body }) => {
   const fm = [`title: ${JSON.stringify(frontmatter.title)}`, `description: ${JSON.stringify(frontmatter.description)}`];
   if (frontmatter.slug !== undefined) fm.push(`slug: ${frontmatter.slug}`);
   if (frontmatter.lastUpdated) fm.push(`lastUpdated: ${frontmatter.lastUpdated}`);
   const short = shortTitle(frontmatter.title);
   if (short) fm.push('head:', '  - tag: title', `    content: ${JSON.stringify(short)}`);
-  const sidebar = frontmatter.sidebar ?? SIDEBAR_OVERRIDES[outPath];
-  if (sidebar) fm.push('sidebar:', ...Object.entries(sidebar).map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`));
+  if (frontmatter.sidebar) fm.push('sidebar:', ...Object.entries(frontmatter.sidebar).map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`));
   // long reference pages: only the h2 per endpoint or schema in the table of contents
   if (frontmatter.tableOfContents) fm.push('tableOfContents:\n  minHeadingLevel: 2\n  maxHeadingLevel: 2');
   return `---\n${fm.join('\n')}\n---\n\n${body.replace(/^\s*\n/, '')}`;
@@ -272,7 +273,8 @@ export const renderPage = ({ frontmatter, body }, outPath = '') => {
 export function listMarkdown(docsDir, rel = '') {
   return readdirSync(join(docsDir, rel), { withFileTypes: true }).flatMap((e) => {
     const p = rel ? `${rel}/${e.name}` : e.name;
-    if (e.isDirectory()) return e.name === 'node_modules' || STATIC_DIRS.includes(p) || rel === 'videos' ? [] : listMarkdown(docsDir, p);
+    if (repoOnly(p)) return [];
+    if (e.isDirectory()) return e.name === 'node_modules' || STATIC_DIRS.includes(p) ? [] : listMarkdown(docsDir, p);
     return e.name.endsWith('.md') ? [p] : [];
   });
 }
@@ -293,13 +295,12 @@ if (isMain(import.meta.url)) {
   // shown on the page and listed as lastmod in the sitemap; the Jev clone is depth 1 and has no dates
   const commitDates = lastCommitDates(main, ['docs', ...Object.keys(pages.main)]);
   for (const rel of files) {
-    const src = readFileSync(join(docsDir, rel), 'utf8');
-    const page = transformMarkdown(rel === VIDEOS_README ? withoutDescriptions(src) : src, rel, videos, { ...DOCS, pages });
+    const page = transformMarkdown(readFileSync(join(docsDir, rel), 'utf8'), rel, videos, { ...DOCS, pages });
     page.frontmatter.lastUpdated = commitDates.get(`docs/${rel}`);
     const out = outputPath(rel);
     const dest = join(outDir, out);
     mkdirSync(dirname(dest), { recursive: true });
-    writeFileSync(dest, renderPage(page, out));
+    writeFileSync(dest, renderPage(page));
   }
 
   for (const name of STATIC_DIRS) {
@@ -322,7 +323,7 @@ if (isMain(import.meta.url)) {
       if (cfg.sidebar) page.frontmatter.sidebar = cfg.sidebar;
       const out = `${cfg.slug}.md`;
       mkdirSync(dirname(join(outDir, out)), { recursive: true });
-      writeFileSync(join(outDir, out), renderPage(page, out));
+      writeFileSync(join(outDir, out), renderPage(page));
       benchmarkPages++;
       for (const [asset, publicPath] of assets) {
         const dest = join(root, 'docs/public', publicPath);
@@ -332,7 +333,7 @@ if (isMain(import.meta.url)) {
     }
   }
   mkdirSync(join(outDir, ARCHIVE_SLUG), { recursive: true });
-  writeFileSync(join(outDir, `${ARCHIVE_SLUG}/index.md`), renderPage(archiveIndex(dates), `${ARCHIVE_SLUG}/index.md`));
+  writeFileSync(join(outDir, `${ARCHIVE_SLUG}/index.md`), renderPage(archiveIndex(dates)));
 
   // the app serves its spec with the running version; the docs copy carries the release it was built from
   const version = /__version__ = "([^"]+)"/.exec(readFileSync(join(main, 'version.py'), 'utf8'))?.[1];
@@ -343,7 +344,7 @@ if (isMain(import.meta.url)) {
   writeFileSync(join(root, 'docs/public/openapi.json'), JSON.stringify(spec, null, 2) + '\n');
   const api = apiPages(spec, version);
   mkdirSync(join(outDir, 'api'), { recursive: true });
-  for (const page of api) writeFileSync(join(outDir, page.path), renderPage(page, page.path));
+  for (const page of api) writeFileSync(join(outDir, page.path), renderPage(page));
 
   const assets = join(root, 'docs/src/assets/generated');
   mkdirSync(assets, { recursive: true });
