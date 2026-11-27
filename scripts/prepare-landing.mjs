@@ -13,12 +13,12 @@ import { DOCS_SITE, LANDING_SITE } from '../shared/social.mjs';
 const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 const humanize = (t) => cap(t.replace(/-/g, ' '));
 
-// the validator capture is a third-party site, not the app
-export const EXCLUDED_SHOTS = new Set(['podcasting-2.0-validator.png']);
+// the validator capture is a third-party site, not the app; the Nord dashboard repeats the dashboard
+export const EXCLUDED_SHOTS = new Set(['podcasting-2.0-validator.png', 'dashboard-desktop-nord.png', 'dashboard-mobile-nord.png']);
 export const landingShots = (files) => files.filter((f) => f.endsWith('.png') && !EXCLUDED_SHOTS.has(f));
 
 // whole-app views first, then feature screens; unlisted screenshots follow in name order, unlisted videos in table order
-export const GALLERY_ORDER = ['dashboard', 'dashboard-nord', 'dashboard-themes', 'feed-detail', 'episode-detail', 'queue', 'history', 'stats',
+export const GALLERY_ORDER = ['dashboard', 'dashboard-themes', 'feed-detail', 'episode-detail', 'queue', 'history', 'stats',
   'ads-detected', 'ad-editor', 'sponsors', 'patterns', 'cue-matches', 'cue-templates', 'cue-editor', 'settings', 'cover-art-badge'];
 export const VIDEO_ORDER = ['demo', 'getting-started', 'how-it-works', 'processing-modes', 'review-queue', 'patterns', 'audio-cues', 'local-feeds', 'providers', 'podcasting-2', 'youtube'];
 const rank = (order, k) => {
