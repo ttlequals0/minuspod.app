@@ -27,12 +27,11 @@ import ThemeControls from '../../../shared/theme/ThemeControls.astro';
     --tc-font-size: var(--sl-text-sm);
   }
 
-  /* inside the mobile menu footer bar, open the theme panel upward above the bar */
+  /* in the mobile menu footer the panel opens upward */
   @media (max-width: 50rem) {
     .mobile-preferences .theme-panel {
       top: auto;
       bottom: calc(100% + 0.5rem);
-      right: 0;
       max-height: min(55dvh, 24rem);
     }
   }

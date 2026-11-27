@@ -40,7 +40,10 @@
   outline: none;
 }
 
-.site-title,
+.site-title {
+  min-height: 44px;
+}
+
 .sl-skip-link {
   display: inline-flex;
   align-items: center;
@@ -51,8 +54,8 @@
   font-weight: 600;
 }
 
-/* Keep trailing description columns in multi-column tables from collapsing to one word per line. */
-.sl-markdown-content tr > :is(th, td):nth-child(n + 3):last-child:not([align="right"]) {
+/* a trailing description column keeps its width; aligned (numeric) columns carry an inline text-align */
+.sl-markdown-content tr > :is(th, td):nth-child(n + 3):last-child:not([style*="text-align"]) {
   min-width: 12rem;
 }
 
@@ -96,11 +99,6 @@
   .expressive-code .copy button {
     min-width: 44px;
     min-height: 44px;
-  }
-
-  .expressive-code .copy {
-    width: 2.75rem;
-    height: 2.75rem;
   }
 
   .expressive-code pre > code {
