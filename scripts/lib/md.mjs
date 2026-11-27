@@ -54,14 +54,22 @@ export function fenceMask(lines) {
   });
 }
 
+// the "## " section each line sits in, null above the first one
+export function sectionOf(lines, fenced) {
+  let section = null;
+  return lines.map((l, i) => {
+    const h = !fenced[i] && /^## (.+?)\s*$/.exec(l);
+    if (h) section = h[1];
+    return section;
+  });
+}
+
 export function firstH1(lines, fenced) {
   const i = lines.findIndex((l, n) => !fenced[n] && /^# /.test(l));
   return i === -1 ? null : { index: i, text: stripMarkdown(lines[i].slice(2)) };
 }
 
 export const NON_PROSE = /^(#|\||<|```|~~~|[-*+] |\d+\. |>|https?:\/\/|!\[)/;
-const METADATA_LINE = /^[A-Z][A-Za-z ]{0,30}: /; // "Date: 2026-07-12", "Status: implemented"
-const SPEC_KEY = /^(Date|Status|Target|Issue|Source|Author)\b/; // a lone metadata line has no structure to detect, only its key
 
 export function firstParagraph(lines, fenced) {
   let para = [];
@@ -71,10 +79,7 @@ export function firstParagraph(lines, fenced) {
       para.push(fenced[i] ? '```' : lines[i].trim());
       continue;
     }
-    // a spec's opening block of "Key: value" lines is metadata, not a description
-    const keyed = para.filter((l) => METADATA_LINE.test(l)).length;
-    const metadata = para.length === 1 ? SPEC_KEY.test(para[0]) && keyed === 1 : keyed >= 2 && keyed * 2 >= para.length; // wrapped values allowed
-    if (para.length && !NON_PROSE.test(para[0]) && !isNavLine(para[0]) && !metadata) {
+    if (para.length && !NON_PROSE.test(para[0]) && !isNavLine(para[0])) {
       return stripMarkdown(para.join(' ')).replace(/\s+/g, ' ');
     }
     para = [];

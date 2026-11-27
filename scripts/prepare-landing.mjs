@@ -5,7 +5,7 @@ import { isMain, resetDir } from './lib/cli.mjs';
 import { mainDir, repoRoot } from './lib/main-dir.mjs';
 import { git, lastCommitDates } from './lib/git.mjs';
 import { parseVideoTable } from './lib/videos.mjs';
-import { LINK_RE, fenceMask, stripMarkdown } from './lib/md.mjs';
+import { LINK_RE, fenceMask, sectionOf, stripMarkdown } from './lib/md.mjs';
 import { VIDEO_LINE, rewriteLink } from './prepare-docs.mjs';
 import { BENCHMARK_PAGES } from '../shared/benchmark-pages.mjs';
 import { DOCS_SITE, LANDING_SITE } from '../shared/social.mjs';
@@ -85,16 +85,11 @@ const readmeLinks = (line) =>
 export function homeMarkdown(readme, rows) {
   const lines = readme.split('\n');
   const fenced = fenceMask(lines);
-  const found = new Set();
+  const sections = sectionOf(lines, fenced);
   const out = [];
-  let section = null;
   lines.forEach((line, i) => {
-    const h = !fenced[i] && /^## (.+)$/.exec(line);
-    if (h) {
-      section = h[1] in HOME_SECTIONS ? h[1] : null;
-      found.add(section);
-    }
-    if (section === null) return;
+    const section = sections[i];
+    if (!(section in HOME_SECTIONS)) return;
     if (fenced[i]) return out.push(line);
     if (VIDEO_LINE.test(line.trim())) {
       const row = rows.find((r) => r.name === HOME_SECTIONS[section]);
@@ -104,7 +99,7 @@ export function homeMarkdown(readme, rows) {
     // a bold line of its own names a feature group
     out.push(readmeLinks(line.replace(/^\*\*(.+)\*\*$/, '### $1')));
   });
-  const missing = Object.keys(HOME_SECTIONS).filter((s) => !found.has(s));
+  const missing = Object.keys(HOME_SECTIONS).filter((s) => !sections.includes(s));
   if (missing.length) throw new Error(`prepare-landing: README sections not found: ${missing.join(', ')}`);
   return out.join('\n').trim() + '\n';
 }

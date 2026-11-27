@@ -4,13 +4,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BENCHMARK_PAGES } from '../shared/benchmark-pages.mjs';
 import { archiveDates, archiveIndex, archivePages, listMarkdown, renderPage, rewriteLink, shortTitle, transformMarkdown } from './prepare-docs.mjs';
-import { parseVideoTable, videoIndex, withoutDescriptions } from './lib/videos.mjs';
+import { parseVideoTable, videoIndex } from './lib/videos.mjs';
 import { headingSlug, mapSrcset } from './lib/md.mjs';
 
 test.each([
   ['installation.md#memory-requirements', 'README.md', '/installation/#memory-requirements'],
   ['README.md', 'installation.md', '/'],
-  ['specs/README.md', 'README.md', '/specs/'],
+  ['specs/README.md', 'README.md', 'https://github.com/ttlequals0/MinusPod/blob/main/docs/specs/README.md'],
+  ['CONTRIBUTING.md#tests', 'installation.md', 'https://github.com/ttlequals0/MinusPod/blob/main/docs/CONTRIBUTING.md#tests'],
+  ['videos/README.md', 'README.md', 'https://minuspod.app/gallery/'],
+  ['videos/README.md#embedding-in-the-docs', 'llm-providers.md', 'https://minuspod.app/gallery/'],
   ['../web-interface.md#held-for-review', 'videos/README.md', '/web-interface/#held-for-review'],
   ['../../README.md', 'videos/README.md', 'https://github.com/ttlequals0/MinusPod#readme'],
   ['../README.md', 'installation.md', 'https://github.com/ttlequals0/MinusPod#readme'],
@@ -168,22 +171,8 @@ test('throws on a video line with no matching table row', () => {
   expect(() => transformMarkdown(src, 'glossary.md', videoIndex(videosReadme))).toThrow(/glossary\.md.*0000-unknown/);
 });
 
-test('labels the specs index as the sidebar overview', () => {
-  const page = transformMarkdown('# Specs\n\nAll specs.\n', 'specs/README.md');
-  expect(renderPage(page, 'specs/index.md')).toBe('---\ntitle: "Specs"\ndescription: "All specs."\nslug: specs\nsidebar:\n  label: "Overview"\n  order: 0\n---\n\nAll specs.\n');
-  expect(renderPage(transformMarkdown('# A\n\nB.\n', 'specs/a.md'), 'specs/a.md')).not.toContain('sidebar:');
-});
-
 test('mapSrcset ignores a trailing empty candidate', () => {
   expect(mapSrcset('a.svg 1x, b.svg 2x,', (u) => `/${u}`)).toBe('/a.svg 1x, /b.svg 2x');
-});
-
-test('withoutDescriptions drops the description column from the catalog table only', () => {
-  const out = withoutDescriptions(videosReadme);
-  expect(out).toContain('| Video | Portrait | Landscape | Length |\n| --- | --- | --- | --- |\n| UI tour | [a](minuspod-demo.mp4) | [b](minuspod-demo-landscape.mp4) | 108 s |\n');
-  expect(out).not.toContain('A held detection.');
-  expect(out).toContain('| How it works | [How It Works](../how-it-works.md) |');
-  expect(() => withoutDescriptions('# Videos\n\n| Video | Length |\n|---|---|\n')).toThrow(/What it shows/);
 });
 
 test('parseVideoTable drops a trailing note that ends with a repository path', () => {
@@ -191,7 +180,7 @@ test('parseVideoTable drops a trailing note that ends with a repository path', (
   expect(parseVideoTable(readme)[0].description).toBe('One episode under each of the five modes, then segment categories and the remove, beep, keep and mark actions.');
 });
 
-test('listMarkdown skips node_modules and video source dirs', () => {
+test('listMarkdown skips node_modules and maintainer docs', () => {
   const dir = mkdtempSync(join(tmpdir(), 'docs-'));
   mkdirSync(join(dir, 'guides/node_modules/pkg'), { recursive: true });
   mkdirSync(join(dir, 'videos/x'), { recursive: true });
@@ -199,7 +188,10 @@ test('listMarkdown skips node_modules and video source dirs', () => {
   writeFileSync(join(dir, 'guides/setup.md'), '# s\n');
   writeFileSync(join(dir, 'videos/x/README.md'), '# x\n');
   writeFileSync(join(dir, 'videos/README.md'), '# v\n');
-  expect(listMarkdown(dir).sort()).toEqual(['guides/setup.md', 'videos/README.md']);
+  mkdirSync(join(dir, 'specs'));
+  writeFileSync(join(dir, 'specs/README.md'), '# specs\n');
+  writeFileSync(join(dir, 'releasing.md'), '# r\n');
+  expect(listMarkdown(dir).sort()).toEqual(['guides/setup.md']);
 });
 
 test('headingSlug keeps underscores', () => {
@@ -212,14 +204,8 @@ test('throws when a video target fragment matches no heading', () => {
 });
 
 test('renderPage writes sidebar and table of contents frontmatter when a page carries them', () => {
-  const out = renderPage({ frontmatter: { title: 'T', description: 'D', sidebar: { order: 2, label: 'Two' }, tableOfContents: true }, body: 'x\n' }, 'api/t.md');
+  const out = renderPage({ frontmatter: { title: 'T', description: 'D', sidebar: { order: 2, label: 'Two' }, tableOfContents: true }, body: 'x\n' });
   expect(out).toBe('---\ntitle: "T"\ndescription: "D"\nsidebar:\n  order: 2\n  label: "Two"\ntableOfContents:\n  minHeadingLevel: 2\n  maxHeadingLevel: 2\n---\n\nx\n');
-  expect(renderPage({ frontmatter: { title: 'S', description: '' }, body: 'y' }, 'specs/index.md')).toContain('sidebar:\n  label: "Overview"\n  order: 0\n');
-});
-
-test('frontmatter skips a spec metadata paragraph', () => {
-  const src = '# Review Queue\n\nDate: 2026-07-12\nStatus: implemented in 2.44.0\n\nRejected detections wait in a review area.\n';
-  expect(transformMarkdown(src, 'specs/review-queue.md').frontmatter.description).toBe('Rejected detections wait in a review area.');
 });
 
 const bench = (repo, slug, extra = {}) => ({ repo, base: '', slug, pages: BENCHMARK_PAGES, assets: new Map(), ...extra });
@@ -259,7 +245,7 @@ test('archive reports get dated slugs and an index page', () => {
   const docs = { repo: 'main', base: 'docs', pages };
   expect(rewriteLink('../benchmarks/llm/results/archive/2026-05-16/report.md', 'llm-providers.md', docs)).toBe('/benchmarks/llm/archive/2026-05-16/');
   expect(rewriteLink('../benchmarks/llm/results/report_assets/pareto.svg', 'llm-providers.md', docs)).toBe('https://github.com/ttlequals0/MinusPod/blob/main/benchmarks/llm/results/report_assets/pareto.svg');
-  const index = renderPage(archiveIndex(['2026-08-23', '2026-05-16']), 'benchmarks/llm/archive/index.md');
+  const index = renderPage(archiveIndex(['2026-08-23', '2026-05-16']));
   expect(index).toContain('slug: benchmarks/llm/archive');
   expect(index).toContain('  label: "Overview"');
   expect(index).toContain('- [2026-08-23](/benchmarks/llm/archive/2026-08-23/)');

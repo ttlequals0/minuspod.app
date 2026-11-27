@@ -32,13 +32,9 @@ const paragraphs = (text) => {
 };
 
 test.each([
-  ['Date: 2026-07-12\nStatus: implemented in 2.44.0\n\nRejected detections wait.', 'Rejected detections wait.'],
-  ['Date: 2026-07-10\nSource: issue #350,\nplus follow-up: rows need playback too.\n\nThe list shows candidates.', 'The list shows candidates.'],
   ['Warning: destructive.\n\nSecond para.', 'Warning: destructive.'],
   ['A tour of the web UI: dashboard, queue and search.\n\nSecond para.', 'A tour of the web UI: dashboard, queue and search.'],
-  ['Status: implemented in 2.96.2.\n\nLet an instance run more than one episode.', 'Let an instance run more than one episode.'],
-  ['Target release: 2.82.0\n\nTen workstreams shipped as one PR.', 'Ten workstreams shipped as one PR.'],
   ['Note: this page covers the queue and how\nit works for operators.\n\nSecond para.', 'Note: this page covers the queue and how it works for operators.'],
-])('firstParagraph skips metadata blocks only (%j)', (text, expected) => {
+])('firstParagraph keeps a paragraph that opens with a label (%j)', (text, expected) => {
   expect(paragraphs(text)).toBe(expected);
 });

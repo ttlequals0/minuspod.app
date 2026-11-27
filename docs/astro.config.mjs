@@ -35,7 +35,6 @@ export const SIDEBAR = collapseGroups(presentPages([
       { slug: 'environment-variables', label: 'Environment variables' },
       { slug: 'feeds-and-usage', label: 'Finding feeds and usage' },
       { slug: 'web-interface', label: 'Web interface' },
-      { slug: 'videos', label: 'Videos' },
     ],
   },
   {
@@ -81,15 +80,6 @@ export const SIDEBAR = collapseGroups(presentPages([
   },
   { label: 'Reference', items: [{ slug: 'glossary', label: 'Glossary' }] },
   benchmarkSidebar(),
-  {
-    label: 'Contributing',
-    items: [
-      { slug: 'contributing', label: 'Contributing' },
-      { slug: 'releasing', label: 'Releasing' },
-      { slug: 'demo-changelog', label: 'Demo changelog' },
-      { label: 'Design specs', items: [{ autogenerate: { directory: 'specs' } }] },
-    ],
-  },
 ], hasPage));
 
 // Starlight sets twitter:card to summary_large_image without an image; the landing poster fills it
