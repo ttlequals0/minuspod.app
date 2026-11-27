@@ -27,25 +27,13 @@ import ThemeControls from '../../../shared/theme/ThemeControls.astro';
     --tc-font-size: var(--sl-text-sm);
   }
 
-  /* inside the mobile menu the list expands in place */
+  /* inside the mobile menu footer bar, open the theme panel upward above the bar */
   @media (max-width: 50rem) {
-    .mobile-preferences .theme-picker {
-      flex: 1 1 100%;
-      align-items: flex-start;
-      padding-block: 0.25rem;
-    }
-
-    .mobile-preferences .theme-pair {
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-
     .mobile-preferences .theme-panel {
-      position: static;
-      width: auto;
-      max-height: none;
-      margin-top: 0.25rem;
-      box-shadow: none;
+      top: auto;
+      bottom: calc(100% + 0.5rem);
+      right: 0;
+      max-height: min(55dvh, 24rem);
     }
   }
 </style>
