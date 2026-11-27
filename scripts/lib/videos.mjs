@@ -1,6 +1,7 @@
 import { posix } from 'node:path';
 import { LINK_RE, linkText } from './md.mjs';
 
+const DESCRIPTION_HEADING = 'What it shows';
 const cells = (line) => line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
 
 function tableRows(lines) {
@@ -18,6 +19,18 @@ export function parseVideoTable(readme) {
     const description = linkText(row[4] ?? '').replace(/(?<=\.)\s+[^.]*\/\.$/, '');
     return [{ name: m[1], title: row[0], seconds: parseInt(row[3], 10), description }];
   });
+}
+
+// the catalog page lists the files; what each video shows is alt text on the gallery
+export function withoutDescriptions(readme) {
+  const lines = readme.split('\n');
+  let col = -1;
+  const head = lines.findIndex((l) => l.trim().startsWith('|') && (col = cells(l).indexOf(DESCRIPTION_HEADING)) !== -1);
+  if (head === -1) throw new Error(`videos README: no "${DESCRIPTION_HEADING}" column`);
+  for (let i = head; i < lines.length && lines[i].trim().startsWith('|'); i++) {
+    lines[i] = `| ${cells(lines[i]).filter((_, n) => n !== col).join(' | ')} |`;
+  }
+  return lines.join('\n');
 }
 
 export function parseEmbedTable(readme) {

@@ -11,8 +11,9 @@ interface Props {
 
 const { name, title, seconds, description, caption = true } = Astro.props;
 const length = formatLength(seconds);
-// without a caption the poster carries the text instead
-const alt = caption ? `Still from ${title}` : [title, description, length].filter(Boolean).map((t) => t.replace(/\.$/, '')).join('. ');
+// without a caption the poster carries the title and length too
+const full = [title, description, length].filter(Boolean).map((t) => t.replace(/\.$/, '')).join('. ');
+const alt = caption ? (description || `Still from ${title}`) : full;
 ---
 
 <figure class="video-card" data-video-card data-name={name} data-title={title}>
@@ -28,7 +29,6 @@ const alt = caption ? `Still from ${title}` : [title, description, length].filte
   {caption && (
     <figcaption>
       <h3><a href={watchPath(name)}>{title}</a></h3>
-      {description && <p>{description}</p>}
       <p class="length">{length}</p>
     </figcaption>
   )}

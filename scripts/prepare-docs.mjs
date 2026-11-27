@@ -4,7 +4,7 @@ import { isMain, resetDir } from './lib/cli.mjs';
 import { jevDir, mainDir, repoRoot } from './lib/main-dir.mjs';
 import { lastCommitDates } from './lib/git.mjs';
 import { ATTR_RE, LINK_RE, NON_PROSE, fenceMask, firstH1, firstParagraph, headingSlug, isExternalHref, isNavLine, mapSrcset, describeText } from './lib/md.mjs';
-import { videoIndex } from './lib/videos.mjs';
+import { videoIndex, withoutDescriptions } from './lib/videos.mjs';
 import { apiPages } from './lib/openapi-md.mjs';
 import { ARCHIVE_DIR, ARCHIVE_SLUG, BENCHMARK_PAGES, RESULTS_SLUG } from '../shared/benchmark-pages.mjs';
 import { parse as parseYaml } from 'yaml';
@@ -15,6 +15,7 @@ const GH_JEV = 'https://github.com/ttlequals0/MinusPodJev';
 const STATIC_DIRS = ['images', 'screenshots', 'schemas', 'examples'];
 // Sidebar frontmatter by output path relative to the docs content dir.
 const SIDEBAR_OVERRIDES = { 'specs/index.md': { label: 'Overview', order: 0 } };
+const VIDEOS_README = 'videos/README.md';
 export const VIDEO_LINE = /^https:\/\/github\.com\/user-attachments\/assets\/([\w-]+)$/;
 const THEMED_PICTURE = /<picture>\s*<source\b([^>]*)>\s*<img\b([^>]*?)\s*\/?>\s*<\/picture>/g;
 
@@ -283,7 +284,7 @@ if (isMain(import.meta.url)) {
   const main = mainDir();
   const docsDir = join(main, 'docs');
   const outDir = join(root, 'docs/src/content/docs');
-  const videos = videoIndex(readFileSync(join(docsDir, 'videos/README.md'), 'utf8'));
+  const videos = videoIndex(readFileSync(join(docsDir, VIDEOS_README), 'utf8'));
 
   resetDir(outDir);
   const dates = archiveDates(join(main, ARCHIVE_DIR));
@@ -292,7 +293,8 @@ if (isMain(import.meta.url)) {
   // shown on the page and listed as lastmod in the sitemap; the Jev clone is depth 1 and has no dates
   const commitDates = lastCommitDates(main, ['docs', ...Object.keys(pages.main)]);
   for (const rel of files) {
-    const page = transformMarkdown(readFileSync(join(docsDir, rel), 'utf8'), rel, videos, { ...DOCS, pages });
+    const src = readFileSync(join(docsDir, rel), 'utf8');
+    const page = transformMarkdown(rel === VIDEOS_README ? withoutDescriptions(src) : src, rel, videos, { ...DOCS, pages });
     page.frontmatter.lastUpdated = commitDates.get(`docs/${rel}`);
     const out = outputPath(rel);
     const dest = join(outDir, out);

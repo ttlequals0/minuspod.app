@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BENCHMARK_PAGES } from '../shared/benchmark-pages.mjs';
 import { archiveDates, archiveIndex, archivePages, listMarkdown, renderPage, rewriteLink, shortTitle, transformMarkdown } from './prepare-docs.mjs';
-import { parseVideoTable, videoIndex } from './lib/videos.mjs';
+import { parseVideoTable, videoIndex, withoutDescriptions } from './lib/videos.mjs';
 import { headingSlug, mapSrcset } from './lib/md.mjs';
 
 test.each([
@@ -176,6 +176,14 @@ test('labels the specs index as the sidebar overview', () => {
 
 test('mapSrcset ignores a trailing empty candidate', () => {
   expect(mapSrcset('a.svg 1x, b.svg 2x,', (u) => `/${u}`)).toBe('/a.svg 1x, /b.svg 2x');
+});
+
+test('withoutDescriptions drops the description column from the catalog table only', () => {
+  const out = withoutDescriptions(videosReadme);
+  expect(out).toContain('| Video | Portrait | Landscape | Length |\n| --- | --- | --- | --- |\n| UI tour | [a](minuspod-demo.mp4) | [b](minuspod-demo-landscape.mp4) | 108 s |\n');
+  expect(out).not.toContain('A held detection.');
+  expect(out).toContain('| How it works | [How It Works](../how-it-works.md) |');
+  expect(() => withoutDescriptions('# Videos\n\n| Video | Length |\n|---|---|\n')).toThrow(/What it shows/);
 });
 
 test('parseVideoTable drops a trailing note that ends with a repository path', () => {
