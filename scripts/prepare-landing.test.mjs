@@ -52,16 +52,16 @@ test('the upstream pitch is a plain non-empty paragraph', () => {
 test('pairs desktop and mobile screenshots, labels them and puts whole-app views first', () => {
   const groups = groupScreenshots(['zz-new.png', 'ad-editor-desktop.png', 'ad-editor-mobile.png', 'dashboard-desktop-nord.png', 'dashboard-mobile-nord.png', 'dashboard-themes.png', 'podcasting-2.0-validator.png']);
   expect(groups).toEqual([
-    { label: 'Dashboard (Nord theme)', files: [{ file: 'dashboard-desktop-nord.png', kind: 'desktop' }, { file: 'dashboard-mobile-nord.png', kind: 'mobile' }] },
     { label: 'Dashboard themes', files: [{ file: 'dashboard-themes.png', kind: 'single' }] },
     { label: 'Ad editor', files: [{ file: 'ad-editor-desktop.png', kind: 'desktop' }, { file: 'ad-editor-mobile.png', kind: 'mobile' }] },
+    { label: 'Dashboard (Nord theme)', files: [{ file: 'dashboard-desktop-nord.png', kind: 'desktop' }, { file: 'dashboard-mobile-nord.png', kind: 'mobile' }] },
     { label: 'Podcasting 2.0 validator', files: [{ file: 'podcasting-2.0-validator.png', kind: 'single' }] },
     { label: 'Zz new', files: [{ file: 'zz-new.png', kind: 'single' }] },
   ]);
 });
 
 test('landingShots keeps app PNGs and drops excluded captures', () => {
-  expect(landingShots(['ad-editor-desktop.png', 'podcasting-2.0-validator.png', 'notes.txt'])).toEqual(['ad-editor-desktop.png']);
+  expect(landingShots(['ad-editor-desktop.png', 'dashboard-desktop-nord.png', 'dashboard-mobile-nord.png', 'podcasting-2.0-validator.png', 'notes.txt'])).toEqual(['ad-editor-desktop.png']);
 });
 
 // Unlisted upstream items still render after the listed ones, so a new video or screenshot never breaks the build.
