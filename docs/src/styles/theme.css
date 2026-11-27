@@ -35,8 +35,34 @@
   outline-offset: 2px;
 }
 
+/* Pagefind draws its own focus border on the search input. */
+#starlight__search .pagefind-ui__search-input:focus-visible {
+  outline: none;
+}
+
+.site-title {
+  min-height: 44px;
+}
+
+.sl-skip-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .sl-markdown-content :is(h1, h2, h3, h4) {
   font-weight: 600;
+}
+
+/* a trailing description column keeps its width; aligned (numeric) columns carry an inline text-align */
+.sl-markdown-content tr > :is(th, td):nth-child(n + 3):last-child:not([style*="text-align"]) {
+  min-width: 12rem;
+}
+
+@media (max-width: 50rem) {
+  .sl-markdown-content :is(th, td) {
+    padding: 0.5rem 0.625rem;
+  }
 }
 
 /* Starlight paints the mobile menu button with the text color (and the background color in light
@@ -62,11 +88,21 @@
     min-height: 44px;
   }
 
+  .sl-markdown-content summary {
+    min-height: 44px;
+    padding-block: 0.625rem;
+    cursor: pointer;
+  }
+
   site-search button,
   .social-icons a,
   .expressive-code .copy button {
     min-width: 44px;
     min-height: 44px;
+  }
+
+  .expressive-code pre > code {
+    padding-inline-end: 3.25rem;
   }
 }
 
