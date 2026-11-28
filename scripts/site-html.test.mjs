@@ -51,7 +51,7 @@ describe.skipIf(!html)('landing built html (build landing first)', () => {
   });
 
   test('footer links the subreddit', () => {
-    expect(html).toMatch(/<a class="reddit" href="https:\/\/www\.reddit\.com\/r\/MinusPod\/" aria-label="r\/MinusPod on Reddit">\s*<svg[^>]*aria-hidden="true"/);
+    expect(html).toMatch(/<a class="icon-link" href="https:\/\/www\.reddit\.com\/r\/MinusPod\/" aria-label="r\/MinusPod on Reddit">\s*<svg[^>]*aria-hidden="true"/);
   });
 
   test('landing head carries the social and structured-data tags', () => {
